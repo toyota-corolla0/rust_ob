@@ -143,8 +143,8 @@ fn cancel_limit_order1() {
     let mut ob = OrderBook::new();
 
     let _ = ob.process_limit_order(884213, Side::Sell, Decimal::from(5), Decimal::from(5));
-    let res1 = ob.cancel_limit_order(9943);
-    let res2 = ob.cancel_limit_order(884213);
+    let res1 = ob.cancel_order(9943);
+    let res2 = ob.cancel_order(884213);
 
     assert_eq!(res1.unwrap(), Error::OrderNotFound);
     assert_eq!(res2, None);

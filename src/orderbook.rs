@@ -140,7 +140,7 @@ impl OrderBook {
         Ok(match_vec)
     }
 
-    pub fn cancel_limit_order(&mut self, id: ID) -> Option<Error> {
+    pub fn cancel_order(&mut self, id: ID) -> Option<Error> {
         match self.order_index.remove(&id) {
             Some(shared_order) => {
                 let side;
