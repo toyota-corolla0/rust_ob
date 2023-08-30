@@ -2,8 +2,10 @@ use std::time::Instant;
 
 use rust_decimal::Decimal;
 use rust_ob::{
-    order::Side,
-    orderbook::{Error, OrderBook, OrderMatch},
+    Side,
+    OrderBook,
+    Error,
+    OrderMatch
 };
 
 #[test]

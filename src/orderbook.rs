@@ -102,12 +102,14 @@ impl OrderBook {
 
                 match highest_priority_order.side {
                     Side::Buy => {
-                        drop(highest_priority_order);
-                        self.buy_side.remove(shared_highest_priority_order);
+                        // drop(highest_priority_order);
+                        // self.buy_side.remove(shared_highest_priority_order);
+                        self.buy_side.pop_highest_priority()
                     }
                     Side::Sell => {
-                        drop(highest_priority_order);
-                        self.sell_side.remove(shared_highest_priority_order);
+                        // drop(highest_priority_order);
+                        // self.sell_side.remove(shared_highest_priority_order);
+                        self.sell_side.pop_highest_priority()
                     }
                 }
             }
