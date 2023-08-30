@@ -8,6 +8,8 @@ use rust_ob::{
     OrderMatch
 };
 
+use rand::prelude::*;
+
 #[test]
 fn process_limit_order1() {
     let mut ob = OrderBook::new();
@@ -118,20 +120,19 @@ fn process_limit_order3() {
 
 #[test]
 fn process_limit_order_benchmark() {
-    static ITERATIONS: u128 = 10000;
-    static OFFSET: u128 = 74892317483;
+    static ITERATIONS: u128 = 1000000;
 
     let mut ob = OrderBook::new();
 
     let start = Instant::now();
 
-    for i in OFFSET..ITERATIONS + OFFSET {
+    for i in 0..ITERATIONS {
         let side = if i % 2 == 0 { Side::Buy } else { Side::Sell };
 
-        let price = Decimal::from(i.pow(3) % 65773).saturating_sub(Decimal::from(20000));
-        let quantity = Decimal::from(i.pow(3) % 57661);
+        let price = Decimal::from(random::<u32>());
+        let quantity = Decimal::from(random::<u32>());
 
-        let _ = ob.process_limit_order(i - OFFSET, side, price, quantity);
+        let _ = ob.process_limit_order(i, side, price, quantity);
     }
 
     let time_in_millis = start.elapsed().as_millis();
@@ -158,7 +159,7 @@ fn cancel_order_benchmark() {
 
     let mut ob = OrderBook::new();
     for i in 0..ITERATIONS {
-        let _ = ob.process_limit_order(i, Side::Sell, Decimal::from(i.pow(3) % 237751 ), Decimal::from(1));
+        let _ = ob.process_limit_order(i, Side::Sell, Decimal::from(random::<u16>()), Decimal::from(1));
     }
 
     let start = Instant::now();
