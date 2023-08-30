@@ -118,7 +118,7 @@ fn process_limit_order3() {
 
 #[test]
 fn process_limit_order_benchmark() {
-    static ITERATIONS: u128 = 100000;
+    static ITERATIONS: u128 = 10000;
     static OFFSET: u128 = 74892317483;
 
     let mut ob = OrderBook::new();
@@ -141,7 +141,7 @@ fn process_limit_order_benchmark() {
 }
 
 #[test]
-fn cancel_limit_order1() {
+fn cancel_order1() {
     let mut ob = OrderBook::new();
 
     let _ = ob.process_limit_order(884213, Side::Sell, Decimal::from(5), Decimal::from(5));
@@ -150,6 +150,27 @@ fn cancel_limit_order1() {
 
     assert_eq!(res1.unwrap(), Error::OrderNotFound);
     assert_eq!(res2, None);
+}
+
+#[test]
+fn cancel_order_benchmark() {
+    const ITERATIONS: u128 = 10000;
+
+    let mut ob = OrderBook::new();
+    for i in 0..ITERATIONS {
+        let _ = ob.process_limit_order(i, Side::Sell, Decimal::from(i.pow(3) % 237751 ), Decimal::from(1));
+    }
+
+    let start = Instant::now();
+
+    for i in 0..ITERATIONS {
+        let _ = ob.cancel_order(i);
+    }
+
+    let time_in_millis = start.elapsed().as_millis();
+
+    println!("{ob}");
+    println!("Iterations: {ITERATIONS}    Time: {time_in_millis}ms");
 }
 
 #[test]
