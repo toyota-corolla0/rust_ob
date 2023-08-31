@@ -44,8 +44,6 @@ impl OrderBook {
     ///
     /// let mut ob = OrderBook::new();
     ///
-    /// let mut ob = OrderBook::new();
-    ///
     /// let res1 = ob.process_limit_order(1, Side::Sell, Decimal::from(4), Decimal::from(4)).unwrap();
     /// assert_eq!(res1.len(), 0);
     ///
