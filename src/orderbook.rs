@@ -20,6 +20,7 @@ pub struct OrderBook {
 }
 
 impl OrderBook {
+    /// Create new initialized OrderBook
     pub fn new() -> Self {
         OrderBook {
             order_index: HashMap::new(),
@@ -31,7 +32,62 @@ impl OrderBook {
         }
     }
 
-    /// 
+    /// Process new limit order
+    /// ```
+    /// use rust_ob::{
+    ///     OrderBook,
+    ///     Side,
+    ///     OrderMatch,
+    ///     Error,
+    /// };
+    /// use rust_decimal::Decimal;
+    ///
+    /// let mut ob = OrderBook::new();
+    ///
+    /// let mut ob = OrderBook::new();
+    ///
+    /// let res1 = ob.process_limit_order(1, Side::Sell, Decimal::from(4), Decimal::from(4)).unwrap();
+    /// assert_eq!(res1.len(), 0);
+    ///
+    /// let res2 = ob.process_limit_order(2, Side::Sell, Decimal::from(3), Decimal::from(2)).unwrap();
+    /// assert_eq!(res2.len(), 0);
+    ///
+    /// let res3 = ob.process_limit_order(3, Side::Buy, Decimal::from(8), Decimal::from(3)).unwrap();
+    /// assert_eq!(
+    ///     res3,
+    ///     vec![
+    ///         OrderMatch {
+    ///             order: 2,
+    ///             quantity: Decimal::from(2),
+    ///             cost: Decimal::from(-6)
+    ///         },
+    ///         OrderMatch {
+    ///             order: 1,
+    ///             quantity: Decimal::from(1),
+    ///             cost: Decimal::from(-4)
+    ///         },
+    ///         OrderMatch {
+    ///             order: 3,
+    ///             quantity: Decimal::from(3),
+    ///             cost: Decimal::from(10)
+    ///         }
+    ///     ]
+    /// );
+    ///
+    ///
+    /// // all costs sum to zero
+    /// assert_eq!(res3.iter().map(|val| val.cost).sum::<Decimal>(), Decimal::ZERO);
+    ///
+    /// // quantity on sell orders == quantity on buy orders
+    /// // last order of slice is always the currently processed order
+    /// assert_eq!(res3.iter().map(|val| val.quantity).sum::<Decimal>(), res3.last().unwrap().quantity * Decimal::from(2));
+    ///
+    /// // possible errors
+    /// assert_eq!(ob.process_limit_order(4, Side::Buy, Decimal::from(10), Decimal::from(0)).unwrap_err(), Error::NonPositiveQuantity);
+    /// assert_eq!(ob.process_limit_order(1, Side::Buy, Decimal::from(10), Decimal::from(25)).unwrap_err(), Error::OrderAlreadyExists);
+    ///
+    ///
+    /// ```
     pub fn process_limit_order(
         &mut self,
         id: ID,
@@ -148,7 +204,6 @@ impl OrderBook {
     }
 
     /// Cancels order with id
-    /// 
     /// ```
     /// use rust_ob::{
     ///     OrderBook,
@@ -156,12 +211,12 @@ impl OrderBook {
     ///     Error,
     /// };
     /// use rust_decimal::Decimal;
-    /// 
+    ///
     /// let mut ob = OrderBook::new();
     /// let _ = ob.process_limit_order(884213, Side::Sell, Decimal::from(5), Decimal::from(5));
     ///
     /// assert_eq!(ob.cancel_order(884213), None);
-    /// assert_eq!(ob.cancel_order(9943), Some(Error::OrderNotFound));
+    /// assert_eq!(ob.cancel_order(884213), Some(Error::OrderNotFound));
     /// ```
     pub fn cancel_order(&mut self, id: ID) -> Option<Error> {
         match self.order_index.remove(&id) {
@@ -200,9 +255,17 @@ impl Display for OrderBook {
             "ID", "SIDE", "PRICE", "QUANTITY"
         )?;
 
-        let sell_side: Vec<Rc<RefCell<Order>>> = self.sell_side.iter().map(|(_, shared_order)| shared_order.clone()).collect();
+        let sell_side: Vec<Rc<RefCell<Order>>> = self
+            .sell_side
+            .iter()
+            .map(|(_, shared_order)| shared_order.clone())
+            .collect();
 
-        for shared_order in sell_side.iter().rev().chain(self.buy_side.iter().map(|(_, shared_order)| shared_order)) {
+        for shared_order in sell_side
+            .iter()
+            .rev()
+            .chain(self.buy_side.iter().map(|(_, shared_order)| shared_order))
+        {
             let order = shared_order.borrow();
             writeln!(
                 f,
