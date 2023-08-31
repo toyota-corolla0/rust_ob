@@ -77,7 +77,7 @@ impl OrderBook {
     /// assert_eq!(res3.iter().map(|val| val.cost).sum::<Decimal>(), Decimal::ZERO);
     ///
     /// // quantity on sell orders == quantity on buy orders
-    /// // last order of slice is always the currently processed order
+    /// // last OrderMatch of Vec (if not empty) is always the order just placed
     /// assert_eq!(res3.iter().map(|val| val.quantity).sum::<Decimal>(), res3.last().unwrap().quantity * Decimal::from(2));
     ///
     /// // possible errors
