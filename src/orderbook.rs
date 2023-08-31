@@ -183,18 +183,10 @@ impl Display for OrderBook {
             "ID", "SIDE", "PRICE", "QUANTITY"
         )?;
 
-        let mut sell_side: Vec<Rc<RefCell<Order>>> = self
-            .sell_side
-            .iter()
-            .map(|(_, shared_order)| shared_order.clone())
-            .collect();
+        let mut sell_side: Vec<Rc<RefCell<Order>>> = self.sell_side.iter().map(|(_, shared_order)| shared_order.clone()).collect();
         sell_side.reverse();
 
-        for shared_order in sell_side.into_iter().chain(
-            self.buy_side
-                .iter()
-                .map(|(_, shared_order)| shared_order.clone()),
-        ) {
+        for shared_order in sell_side.iter().chain(self.buy_side.iter().map(|(_, shared_order)| shared_order)) {
             let order = shared_order.borrow();
             writeln!(
                 f,
