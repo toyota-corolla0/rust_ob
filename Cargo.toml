@@ -1,7 +1,13 @@
 [package]
 name = "rust_ob"
-version = "1.0.0"
+description = "an orderbook library for rust"
+readme = "README.md"
+keywords = ["financial", "orderbook"]
+version = "1.0.1"
 edition = "2021"
+license-file = "LICENSE"
+repository = "https://github.com/toyota-corolla0/rust_ob"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
