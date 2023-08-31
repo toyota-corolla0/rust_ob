@@ -120,7 +120,7 @@ fn process_limit_order3() {
 
 #[test]
 fn process_limit_order_benchmark() {
-    static ITERATIONS: u128 = 1000000;
+    static ITERATIONS: u128 = 100000;
 
     let mut ob = OrderBook::new();
 

@@ -9,11 +9,14 @@ use crate::{
 
 #[derive(Debug)]
 pub struct OrderBook {
-    // every active order is in: order_index AND (buy_side OR sell_side)
+    // every active order is in: order_index AND (buy_side XOR sell_side)
     order_index: HashMap<ID, Rc<RefCell<Order>>>,
 
     buy_side: BookSide<MaxPricePriotity>,
     sell_side: BookSide<MinPricePriority>,
+
+    // increments on each new order added to data structures
+    priority: u64,
 }
 
 impl OrderBook {
@@ -23,6 +26,8 @@ impl OrderBook {
 
             buy_side: BookSide::new(),
             sell_side: BookSide::new(),
+
+            priority: u64::MIN,
         }
     }
 
@@ -102,10 +107,12 @@ impl OrderBook {
 
                 match highest_priority_order.side {
                     Side::Buy => {
-                        self.buy_side.pop_highest_priority()
+                        drop(highest_priority_order);
+                        self.buy_side.pop_highest_priority();
                     }
                     Side::Sell => {
-                        self.sell_side.pop_highest_priority()
+                        drop(highest_priority_order);
+                        self.sell_side.pop_highest_priority();
                     }
                 }
             }
@@ -126,6 +133,7 @@ impl OrderBook {
                 side,
                 price,
                 quantity,
+                priority: self.get_priority(),
             }));
 
             self.order_index.insert(id, shared_order.clone());
@@ -158,21 +166,35 @@ impl OrderBook {
             None => Some(Error::OrderNotFound),
         }
     }
+
+    fn get_priority(&mut self) -> u64 {
+        let p = self.priority;
+        self.priority += 1;
+        p
+    }
 }
 
 impl Display for OrderBook {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        const PADDING: usize = 10;
+        const PADDING: usize = 18;
         writeln!(
             f,
             "{:->PADDING$}{:->PADDING$}{:->PADDING$}{:->PADDING$}",
             "ID", "SIDE", "PRICE", "QUANTITY"
         )?;
 
-        let mut sell_side: Vec<Rc<RefCell<Order>>> = self.sell_side.iter().collect();
+        let mut sell_side: Vec<Rc<RefCell<Order>>> = self
+            .sell_side
+            .iter()
+            .map(|(_, shared_order)| shared_order.clone())
+            .collect();
         sell_side.reverse();
 
-        for shared_order in sell_side.into_iter().chain(self.buy_side.iter()) {
+        for shared_order in sell_side.into_iter().chain(
+            self.buy_side
+                .iter()
+                .map(|(_, shared_order)| shared_order.clone()),
+        ) {
             let order = shared_order.borrow();
             writeln!(
                 f,

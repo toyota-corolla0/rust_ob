@@ -10,6 +10,7 @@ pub struct Order {
     pub side: Side,
     pub price: Decimal,
     pub quantity: Decimal,
+    pub priority: u64,
 }
 
 #[derive(Debug, Clone, Copy)]
