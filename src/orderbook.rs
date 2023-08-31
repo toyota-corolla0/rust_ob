@@ -214,6 +214,8 @@ impl OrderBook {
     /// let _ = ob.process_limit_order(884213, Side::Sell, Decimal::from(5), Decimal::from(5));
     ///
     /// assert_eq!(ob.cancel_order(884213), None);
+    /// 
+    /// // possible errors
     /// assert_eq!(ob.cancel_order(884213), Some(Error::OrderNotFound));
     /// ```
     pub fn cancel_order(&mut self, id: ID) -> Option<Error> {
