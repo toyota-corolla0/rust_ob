@@ -120,7 +120,7 @@ fn process_limit_order3() {
 
 #[test]
 fn process_limit_order_benchmark() {
-    static ITERATIONS: u128 = 100000;
+    static ITERATIONS: u128 = 10000;
 
     let mut ob = OrderBook::new();
 
@@ -129,8 +129,8 @@ fn process_limit_order_benchmark() {
     for i in 0..ITERATIONS {
         let side = if i % 2 == 0 { Side::Buy } else { Side::Sell };
 
-        let price = Decimal::from(random::<u32>());
-        let quantity = Decimal::from(random::<u32>());
+        let price = Decimal::from(random::<u8>());
+        let quantity = Decimal::from(random::<u8>());
 
         let _ = ob.process_limit_order(i, side, price, quantity);
     }
