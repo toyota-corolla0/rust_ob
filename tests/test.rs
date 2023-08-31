@@ -1,12 +1,7 @@
 use std::time::Instant;
 
 use rust_decimal::Decimal;
-use rust_ob::{
-    Side,
-    OrderBook,
-    Error,
-    OrderMatch
-};
+use rust_ob::{Error, OrderBook, OrderMatch, Side};
 
 use rand::prelude::*;
 
@@ -144,13 +139,10 @@ fn process_limit_order_benchmark() {
 #[test]
 fn cancel_order1() {
     let mut ob = OrderBook::new();
-
     let _ = ob.process_limit_order(884213, Side::Sell, Decimal::from(5), Decimal::from(5));
-    let res1 = ob.cancel_order(9943);
-    let res2 = ob.cancel_order(884213);
 
-    assert_eq!(res1.unwrap(), Error::OrderNotFound);
-    assert_eq!(res2, None);
+    assert_eq!(ob.cancel_order(884213), None);
+    assert_eq!(ob.cancel_order(9943), Some(Error::OrderNotFound));
 }
 
 #[test]
@@ -159,7 +151,12 @@ fn cancel_order_benchmark() {
 
     let mut ob = OrderBook::new();
     for i in 0..ITERATIONS {
-        let _ = ob.process_limit_order(i, Side::Sell, Decimal::from(random::<u16>()), Decimal::from(1));
+        let _ = ob.process_limit_order(
+            i,
+            Side::Sell,
+            Decimal::from(random::<u16>()),
+            Decimal::from(1),
+        );
     }
 
     let start = Instant::now();

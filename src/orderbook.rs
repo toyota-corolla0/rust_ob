@@ -31,6 +31,7 @@ impl OrderBook {
         }
     }
 
+    /// 
     pub fn process_limit_order(
         &mut self,
         id: ID,
@@ -146,6 +147,22 @@ impl OrderBook {
         Ok(match_vec)
     }
 
+    /// Cancels order with id
+    /// 
+    /// ```
+    /// use rust_ob::{
+    ///     OrderBook,
+    ///     Side,
+    ///     Error,
+    /// };
+    /// use rust_decimal::Decimal;
+    /// 
+    /// let mut ob = OrderBook::new();
+    /// let _ = ob.process_limit_order(884213, Side::Sell, Decimal::from(5), Decimal::from(5));
+    ///
+    /// assert_eq!(ob.cancel_order(884213), None);
+    /// assert_eq!(ob.cancel_order(9943), Some(Error::OrderNotFound));
+    /// ```
     pub fn cancel_order(&mut self, id: ID) -> Option<Error> {
         match self.order_index.remove(&id) {
             Some(shared_order) => {

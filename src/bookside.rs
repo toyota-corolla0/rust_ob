@@ -23,7 +23,7 @@ where
         }
     }
 
-    // no duplicate order check present
+    /// no duplicate order check present
     pub fn add(&mut self, shared_order: Rc<RefCell<Order>>) {
         // get map key
         let key;
@@ -35,7 +35,7 @@ where
         self.price_tree.insert(key, shared_order);
     }
 
-    // does not panic if order can't be found
+    /// does not panic if order can't be found
     pub fn remove(&mut self, shared_order: Rc<RefCell<Order>>) {
         let key;
 
@@ -51,7 +51,7 @@ where
         self.price_tree.peek()
     }
 
-    // does not panic if there is no order to pop
+    /// does not panic if there is no order to pop
     pub fn pop_highest_priority(&mut self) {
         self.price_tree.pop();
     }
