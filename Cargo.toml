@@ -5,7 +5,7 @@ readme = "README.md"
 keywords = ["financial", "orderbook"]
 version = "1.0.6"
 edition = "2021"
-license = "GPL-3.0-or-later"
+license = "MIT"
 repository = "https://github.com/toyota-corolla0/rust_ob"
 documentation = "https://docs.rs/rust_ob/latest/rust_ob/"
 
