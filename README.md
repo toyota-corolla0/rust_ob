@@ -1,7 +1,7 @@
 # rust_ob
 An orderbook library for rust
 
-# usage
+### usage
 ```rust
 use rust_decimal::Decimal;
 use rust_ob::{OrderBook, Side, Error};
