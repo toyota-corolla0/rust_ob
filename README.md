@@ -11,31 +11,35 @@ fn main() {
 
     // create limit order
     let result = ob.process_limit_order(1, Side::Buy, Decimal::from(10), Decimal::from(10));
-    if let Err(Error::OrderAlreadyExists) = result {
-        // handle error
-    }
-    if let Err(Error::NonPositiveQuantity) = result {
-        // handle error
-    }
 
-    if result.is_err() {
-        panic!("should never get here")
-    }
-
-    let order_match_vec = result.unwrap();
+    let order_match_vec = match result {
+        Err(Error::OrderAlreadyExists) => {
+            // handle error
+            panic!()
+        }
+        Err(Error::NonPositiveQuantity) => {
+            // handle error
+            panic!()
+        }
+        Ok(v) => v,
+        _ => panic!("should never get here")
+    };
 
     for order_match in order_match_vec {
         // handle matches
         // more information about order_match_vec can be found in documentation for OrderBook::process_limit_order
     }
 
-    // cancel limit order
+    // cancel order
     let result = ob.cancel_order(1);
-    if let Some(Error::OrderNotFound) = result {
-        // handle error
+    
+    match result {
+        Some(Error::OrderNotFound) => {
+            // handle error
+            panic!()
+        }
+        None => {}
+        _ => panic!("should never get here")
     }
-    if result.is_some() {
-        panic!("should never get here")
-    } 
 }
 ```
