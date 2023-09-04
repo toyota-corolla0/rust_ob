@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use rust_decimal::Decimal;
-use rust_ob::{Error, OrderBook, OrderMatch, Side};
+use rust_ob::{OrderBook, OrderMatch, Side, errors};
 
 use rand::prelude::*;
 
@@ -10,11 +10,11 @@ fn process_limit_order1() {
     let mut ob = OrderBook::new();
 
     let res = ob.process_limit_order(1, Side::Buy, Decimal::from(10), Decimal::from(0));
-    assert_eq!(res.unwrap_err(), Error::NonPositiveQuantity);
+    assert_eq!(res.unwrap_err(), errors::ProcessLimitOrder::NonPositiveQuantity);
 
     let _ = ob.process_limit_order(500, Side::Buy, Decimal::from(10), Decimal::from(10));
     let res = ob.process_limit_order(500, Side::Buy, Decimal::from(10), Decimal::from(10));
-    assert_eq!(res.unwrap_err(), Error::OrderAlreadyExists);
+    assert_eq!(res.unwrap_err(), errors::ProcessLimitOrder::OrderAlreadyExists);
 }
 
 #[test]
@@ -141,8 +141,8 @@ fn cancel_order1() {
     let mut ob = OrderBook::new();
     let _ = ob.process_limit_order(884213, Side::Sell, Decimal::from(5), Decimal::from(5));
 
-    assert_eq!(ob.cancel_order(884213), None);
-    assert_eq!(ob.cancel_order(9943), Some(Error::OrderNotFound));
+    assert_eq!(ob.cancel_order(884213), Ok(()));
+    assert_eq!(ob.cancel_order(9943), Err(errors::CancelOrder::OrderNotFound));
 }
 
 #[test]

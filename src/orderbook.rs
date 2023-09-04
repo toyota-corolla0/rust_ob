@@ -4,6 +4,7 @@ use rust_decimal::Decimal;
 
 use crate::{
     bookside::{BookSide, MaxPricePriotity, MinPricePriority},
+    errors,
     order::{Order, Side, ID},
 };
 
@@ -38,7 +39,7 @@ impl OrderBook {
     ///     OrderBook,
     ///     Side,
     ///     OrderMatch,
-    ///     Error,
+    ///     errors,
     /// };
     /// use rust_decimal::Decimal;
     ///
@@ -81,8 +82,8 @@ impl OrderBook {
     /// assert_eq!(res3.iter().map(|val| val.quantity).sum::<Decimal>(), res3.last().unwrap().quantity * Decimal::from(2));
     ///
     /// // possible errors
-    /// assert_eq!(ob.process_limit_order(4, Side::Buy, Decimal::from(10), Decimal::from(0)).unwrap_err(), Error::NonPositiveQuantity);
-    /// assert_eq!(ob.process_limit_order(1, Side::Buy, Decimal::from(10), Decimal::from(25)).unwrap_err(), Error::OrderAlreadyExists);
+    /// assert_eq!(ob.process_limit_order(4, Side::Buy, Decimal::from(10), Decimal::from(0)).unwrap_err(), errors::ProcessLimitOrder::NonPositiveQuantity);
+    /// assert_eq!(ob.process_limit_order(1, Side::Buy, Decimal::from(10), Decimal::from(25)).unwrap_err(), errors::ProcessLimitOrder::OrderAlreadyExists);
     ///
     ///
     /// ```
@@ -92,14 +93,14 @@ impl OrderBook {
         side: Side,
         price: Decimal,
         mut quantity: Decimal,
-    ) -> Result<Vec<OrderMatch>, Error> {
+    ) -> Result<Vec<OrderMatch>, errors::ProcessLimitOrder> {
         // check to ensure order does not already exist
         if self.order_index.contains_key(&id) {
-            return Err(Error::OrderAlreadyExists);
+            return Err(errors::ProcessLimitOrder::OrderAlreadyExists);
         }
         // check to ensure positive quantity
         if quantity <= Decimal::ZERO {
-            return Err(Error::NonPositiveQuantity);
+            return Err(errors::ProcessLimitOrder::NonPositiveQuantity);
         }
 
         // vars
@@ -137,14 +138,28 @@ impl OrderBook {
             // find satisfied quantity and update vars
             let satisfied_quantity = quantity.min(highest_priority_order.quantity);
 
-            quantity -= satisfied_quantity;
-            highest_priority_order.quantity -= satisfied_quantity;
+            quantity = quantity
+                .checked_sub(satisfied_quantity)
+                .unwrap_or_else(|| panic!("OrderBook: subtraction overflow"));
+            highest_priority_order.quantity = highest_priority_order
+                .quantity
+                .checked_sub(satisfied_quantity)
+                .unwrap_or_else(|| panic!("OrderBook: subtraction overflow"));
 
-            new_order_match.quantity += satisfied_quantity;
-            highest_priority_order_match.quantity += satisfied_quantity;
+            new_order_match.quantity = new_order_match
+                .quantity
+                .checked_add(satisfied_quantity)
+                .unwrap_or_else(|| panic!("OrderBook: addition overflow"));
+            highest_priority_order_match.quantity = highest_priority_order_match
+                .quantity
+                .checked_add(satisfied_quantity)
+                .unwrap_or_else(|| panic!("OrderBook: addition overflow"));
 
             // find cost and update vars
-            let buy_side_cost = highest_priority_order.price * satisfied_quantity;
+            let buy_side_cost = highest_priority_order
+                .price
+                .checked_mul(satisfied_quantity)
+                .unwrap_or_else(|| panic!("OrderBook: multiplication overflow"));
             match side {
                 Side::Buy => {
                     new_order_match.cost += buy_side_cost;
@@ -206,19 +221,19 @@ impl OrderBook {
     /// use rust_ob::{
     ///     OrderBook,
     ///     Side,
-    ///     Error,
+    ///     errors,
     /// };
     /// use rust_decimal::Decimal;
     ///
     /// let mut ob = OrderBook::new();
     /// let _ = ob.process_limit_order(884213, Side::Sell, Decimal::from(5), Decimal::from(5));
     ///
-    /// assert_eq!(ob.cancel_order(884213), None);
-    /// 
+    /// assert_eq!(ob.cancel_order(884213), Ok(()));
+    ///
     /// // possible errors
-    /// assert_eq!(ob.cancel_order(884213), Some(Error::OrderNotFound));
+    /// assert_eq!(ob.cancel_order(884213), Err(errors::CancelOrder::OrderNotFound));
     /// ```
-    pub fn cancel_order(&mut self, id: ID) -> Option<Error> {
+    pub fn cancel_order(&mut self, id: ID) -> Result<(), errors::CancelOrder> {
         match self.order_index.remove(&id) {
             Some(shared_order) => {
                 let side;
@@ -232,10 +247,10 @@ impl OrderBook {
                     Side::Sell => self.sell_side.remove(shared_order),
                 }
 
-                None
+                Ok(())
             }
 
-            None => Some(Error::OrderNotFound),
+            None => Err(errors::CancelOrder::OrderNotFound),
         }
     }
 
@@ -296,11 +311,4 @@ impl OrderMatch {
             cost: Decimal::ZERO,
         }
     }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum Error {
-    OrderAlreadyExists,
-    NonPositiveQuantity,
-    OrderNotFound,
 }
