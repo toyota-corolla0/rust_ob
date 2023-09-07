@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use rust_decimal::Decimal;
-use rust_ob::{OrderBook, OrderMatch, Side, errors};
+use rust_ob::{errors, OrderBook, OrderMatch, Side};
 
 use rand::prelude::*;
 
@@ -10,11 +10,17 @@ fn process_limit_order1() {
     let mut ob = OrderBook::new();
 
     let res = ob.process_limit_order(1, Side::Buy, Decimal::from(10), Decimal::from(0));
-    assert_eq!(res.unwrap_err(), errors::ProcessLimitOrder::NonPositiveQuantity);
+    assert_eq!(
+        res.unwrap_err(),
+        errors::ProcessLimitOrder::NonPositiveQuantity
+    );
 
     let _ = ob.process_limit_order(500, Side::Buy, Decimal::from(10), Decimal::from(10));
     let res = ob.process_limit_order(500, Side::Buy, Decimal::from(10), Decimal::from(10));
-    assert_eq!(res.unwrap_err(), errors::ProcessLimitOrder::OrderAlreadyExists);
+    assert_eq!(
+        res.unwrap_err(),
+        errors::ProcessLimitOrder::OrderAlreadyExists
+    );
 }
 
 #[test]
@@ -142,7 +148,10 @@ fn cancel_order1() {
     let _ = ob.process_limit_order(884213, Side::Sell, Decimal::from(5), Decimal::from(5));
 
     assert_eq!(ob.cancel_order(884213), Ok(()));
-    assert_eq!(ob.cancel_order(9943), Err(errors::CancelOrder::OrderNotFound));
+    assert_eq!(
+        ob.cancel_order(9943),
+        Err(errors::CancelOrder::OrderNotFound)
+    );
 }
 
 #[test]
@@ -169,6 +178,201 @@ fn cancel_order_benchmark() {
 
     println!("{ob}");
     println!("Iterations: {ITERATIONS}    Time: {time_in_millis}ms");
+}
+
+#[test]
+fn general1() {
+    let mut ob = OrderBook::new();
+
+    assert_eq!(
+        ob.process_limit_order(1, Side::Buy, Decimal::from(20), Decimal::from(5))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(2, Side::Buy, Decimal::from(15), Decimal::from(3))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(3, Side::Sell, Decimal::from(35), Decimal::from(10))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(4, Side::Sell, Decimal::from(50), Decimal::from(4))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(5, Side::Sell, Decimal::from(30), Decimal::from(15))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(6, Side::Buy, Decimal::from(20), Decimal::from(2))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(7, Side::Sell, Decimal::from(35), Decimal::from(7))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(8, Side::Buy, Decimal::from(15), Decimal::from(9))
+            .unwrap()
+            .len(),
+        0
+    );
+
+    assert_eq!(
+        ob.process_limit_order(9, Side::Buy, Decimal::from(33), Decimal::from(22))
+            .unwrap(),
+        vec![
+            OrderMatch {
+                order: 5,
+                quantity: Decimal::from(15),
+                cost: Decimal::from(-450)
+            },
+            OrderMatch {
+                order: 9,
+                quantity: Decimal::from(15),
+                cost: Decimal::from(450)
+            },
+        ]
+    );
+
+    assert_eq!(
+        ob.process_limit_order(10, Side::Sell, Decimal::from(9), Decimal::from(18))
+            .unwrap(),
+        vec![
+            OrderMatch {
+                order: 9,
+                quantity: Decimal::from(7),
+                cost: Decimal::from(231)
+            },
+            OrderMatch {
+                order: 1,
+                quantity: Decimal::from(5),
+                cost: Decimal::from(100)
+            },
+            OrderMatch {
+                order: 6,
+                quantity: Decimal::from(2),
+                cost: Decimal::from(40)
+            },
+            OrderMatch {
+                order: 2,
+                quantity: Decimal::from(3),
+                cost: Decimal::from(45)
+            },
+            OrderMatch {
+                order: 8,
+                quantity: Decimal::from(1),
+                cost: Decimal::from(15)
+            },
+            OrderMatch {
+                order: 10,
+                quantity: Decimal::from(18),
+                cost: Decimal::from(-231 - 100 - 40 - 45 - 15)
+            },
+        ]
+    );
+
+    assert_eq!(
+        ob.process_limit_order(11, Side::Buy, Decimal::from(-5), Decimal::from(4))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(12, Side::Buy, Decimal::from(-10), Decimal::from(14))
+            .unwrap()
+            .len(),
+        0
+    );
+
+    assert_eq!(ob.cancel_order(4), Ok(()));
+    assert_eq!(ob.cancel_order(4), Err(errors::CancelOrder::OrderNotFound));
+
+    assert_eq!(
+        ob.process_limit_order(13, Side::Buy, Decimal::from(38), Decimal::from(25))
+            .unwrap(),
+        vec![
+            OrderMatch {
+                order: 3,
+                quantity: Decimal::from(10),
+                cost: Decimal::from(-350)
+            },
+            OrderMatch {
+                order: 7,
+                quantity: Decimal::from(7),
+                cost: Decimal::from(-245)
+            },
+            OrderMatch {
+                order: 13,
+                quantity: Decimal::from(17),
+                cost: Decimal::from(595)
+            },
+        ]
+    );
+
+    assert_eq!(
+        ob.process_limit_order(14, Side::Sell, Decimal::from(-17), Decimal::from(35))
+            .unwrap(),
+        vec![
+            OrderMatch {
+                order: 13,
+                quantity: Decimal::from(8),
+                cost: Decimal::from(304)
+            },
+            OrderMatch {
+                order: 8,
+                quantity: Decimal::from(8),
+                cost: Decimal::from(120)
+            },
+            OrderMatch {
+                order: 11,
+                quantity: Decimal::from(4),
+                cost: Decimal::from(-20)
+            },
+            OrderMatch {
+                order: 12,
+                quantity: Decimal::from(14),
+                cost: Decimal::from(-140)
+            },
+            OrderMatch {
+                order: 14,
+                quantity: Decimal::from(34),
+                cost: Decimal::from(-264)
+            },
+        ]
+    );
+
+    assert_eq!(
+        ob.process_limit_order(15, Side::Buy, Decimal::from(33), Decimal::from(1))
+            .unwrap(),
+        vec![
+            OrderMatch {
+                order: 14,
+                quantity: Decimal::from(1),
+                cost: Decimal::from(17)
+            },
+            OrderMatch {
+                order: 15,
+                quantity: Decimal::from(1),
+                cost: Decimal::from(-17)
+            },
+        ]
+    );
 }
 
 #[test]
