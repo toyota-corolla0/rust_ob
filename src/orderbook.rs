@@ -162,11 +162,17 @@ impl OrderBook {
                 .unwrap_or_else(|| panic!("OrderBook: multiplication overflow"));
             match side {
                 Side::Buy => {
-                    new_order_match.cost += buy_side_cost;
+                    new_order_match.cost = new_order_match
+                        .cost
+                        .checked_add(buy_side_cost)
+                        .unwrap_or_else(|| panic!("OrderBook: addition overflow"));
                     highest_priority_order_match.cost = -buy_side_cost
                 }
                 Side::Sell => {
-                    new_order_match.cost -= buy_side_cost;
+                    new_order_match.cost = new_order_match
+                        .cost
+                        .checked_sub(buy_side_cost)
+                        .unwrap_or_else(|| panic!("OrderBook: subtraction overflow"));
                     highest_priority_order_match.cost = buy_side_cost
                 }
             }
