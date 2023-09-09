@@ -261,9 +261,8 @@ impl OrderBook {
     }
 
     fn get_priority(&mut self) -> u64 {
-        let p = self.priority;
         self.priority += 1;
-        p
+        self.priority
     }
 }
 
