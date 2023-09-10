@@ -260,6 +260,63 @@ impl OrderBook {
         }
     }
 
+    ///
+    /// (quantity_fulfilled, cost)
+    pub fn find_market_cost(
+        &self,
+        side: Side,
+        mut quantity: Decimal,
+    ) -> Result<(Decimal, Decimal), errors::FindMarketCost> {
+        // check to ensure positive quantity
+        if quantity <= Decimal::ZERO {
+            return Err(errors::FindMarketCost::NonPositiveQuantity);
+        }
+
+        // inits
+        let mut quantity_fulfilled = Decimal::ZERO;
+        let mut cost = Decimal::ZERO;
+        let mut buy_side_iter = self.buy_side.iter();
+        let mut sell_side_iter = self.sell_side.iter();
+
+        while !quantity.is_zero() {
+            let shared_order = match side {
+                Side::Buy => sell_side_iter.next().map(|(_, shared_order)| shared_order),
+                Side::Sell => buy_side_iter.next().map(|(_, shared_order)| shared_order),
+            };
+            let order = match shared_order {
+                Some(val) => val.borrow(),
+                None => break,
+            };
+            
+            let satisfied_quantity = quantity.min(order.quantity);
+            quantity = quantity
+                .checked_sub(satisfied_quantity)
+                .unwrap_or_else(|| panic!("OrderBook: subtraction overflow"));
+            quantity_fulfilled = quantity_fulfilled
+                .checked_add(satisfied_quantity)
+                .unwrap_or_else(|| panic!("OrderBook: addition overflow"));
+
+            let buy_side_cost = order
+                .price
+                .checked_mul(satisfied_quantity)
+                .unwrap_or_else(|| panic!("OrderBook: multiplication overflow"));
+            match side {
+                Side::Buy => {
+                    cost = cost
+                        .checked_add(buy_side_cost)
+                        .unwrap_or_else(|| panic!("OrderBook: addition overflow"));
+                }
+                Side::Sell => {
+                    cost = cost
+                        .checked_sub(buy_side_cost)
+                        .unwrap_or_else(|| panic!("OrderBook: subtraction overflow"));
+                }
+            }
+        }
+
+        Ok((quantity_fulfilled, cost))
+    }
+
     fn get_priority(&mut self) -> u64 {
         self.priority += 1;
         self.priority

@@ -8,3 +8,7 @@ pub enum ProcessLimitOrder {
 pub enum CancelOrder {
     OrderNotFound,
 }
+
+pub enum FindMarketCost {
+    NonPositiveQuantity
+}
