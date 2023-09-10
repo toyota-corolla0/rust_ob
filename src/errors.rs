@@ -9,6 +9,7 @@ pub enum CancelOrder {
     OrderNotFound,
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub enum FindMarketCost {
     NonPositiveQuantity
 }
