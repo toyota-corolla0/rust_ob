@@ -181,6 +181,32 @@ fn cancel_order_benchmark() {
 }
 
 #[test]
+fn find_market_cost() {
+    const ITERATIONS: u128 = 1000000;
+
+    
+    let mut ob = OrderBook::new();
+    for i in 0..ITERATIONS {
+        let side = if i%2 == 0 {
+            Side::Buy
+        } else {
+            Side::Sell
+        };
+
+        let _ = ob.process_limit_order(
+            i,
+            side,
+            Decimal::from(random::<u8>()),
+            Decimal::from(1),
+        );
+    }
+
+    println!("{ob}");
+
+    println!("{:?}", ob.find_market_cost(Side::Buy, Decimal::from(3)).unwrap())
+}
+
+#[test]
 fn general1() {
     let mut ob = OrderBook::new();
 
