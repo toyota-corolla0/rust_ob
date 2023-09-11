@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 use rust_decimal::Decimal;
 
 use crate::{
-    bookside::{BookSide, MaxPricePriotity, MinPricePriority},
+    bookside::{BookSide, MaxPricePriority, MinPricePriority},
     errors,
     order::{Order, Side, ID},
 };
@@ -13,7 +13,7 @@ pub struct OrderBook {
     // every active order is in: order_index AND (buy_side XOR sell_side)
     order_index: HashMap<ID, Rc<RefCell<Order>>>,
 
-    buy_side: BookSide<MaxPricePriotity>,
+    buy_side: BookSide<MaxPricePriority>,
     sell_side: BookSide<MinPricePriority>,
 
     // increments on each new order added to data structures
@@ -287,7 +287,7 @@ impl OrderBook {
                 Some(val) => val.borrow(),
                 None => break,
             };
-            
+
             let satisfied_quantity = quantity.min(order.quantity);
             quantity = quantity
                 .checked_sub(satisfied_quantity)

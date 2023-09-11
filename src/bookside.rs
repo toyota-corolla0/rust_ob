@@ -1,6 +1,6 @@
 use std::{cell::RefCell, cmp::Ordering, rc::Rc};
 
-use rb_tree::{RBMap, rbmap::Iter};
+use rb_tree::{rbmap::Iter, RBMap};
 use rust_decimal::Decimal;
 
 use crate::order::Order;
@@ -80,7 +80,7 @@ impl PartialEq for MinPricePriority {
 }
 impl PartialOrd for MinPricePriority {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self.0.partial_cmp(&other.0)  {
+        match self.0.partial_cmp(&other.0) {
             Some(core::cmp::Ordering::Equal) => {}
             ord => return ord,
         }
@@ -89,19 +89,19 @@ impl PartialOrd for MinPricePriority {
 }
 
 #[derive(Debug, Clone)]
-pub struct MaxPricePriotity(Decimal, u64);
+pub struct MaxPricePriority(Decimal, u64);
 
-impl RBMapKey for MaxPricePriotity {
+impl RBMapKey for MaxPricePriority {
     fn new(price: Decimal, priority: u64) -> Self {
-        MaxPricePriotity(price, priority)
+        MaxPricePriority(price, priority)
     }
 }
-impl PartialEq for MaxPricePriotity {
+impl PartialEq for MaxPricePriority {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0 && self.1 == other.1
     }
 }
-impl PartialOrd for MaxPricePriotity {
+impl PartialOrd for MaxPricePriority {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match other.0.partial_cmp(&self.0) {
             Some(core::cmp::Ordering::Equal) => {}
@@ -110,5 +110,3 @@ impl PartialOrd for MaxPricePriotity {
         self.1.partial_cmp(&other.1)
     }
 }
-
-
