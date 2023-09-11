@@ -110,3 +110,8 @@ impl PartialOrd for MaxPricePriority {
         self.1.partial_cmp(&other.1)
     }
 }
+
+pub enum BookSideIter<'a> {
+    BuySide(Iter<'a,MaxPricePriority, Rc<RefCell<Order>>>),
+    SellSide(Iter<'a,MinPricePriority, Rc<RefCell<Order>>>)
+}

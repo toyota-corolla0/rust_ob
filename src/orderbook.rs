@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 use rust_decimal::Decimal;
 
 use crate::{
-    bookside::{BookSide, MaxPricePriority, MinPricePriority},
+    bookside::{BookSide, BookSideIter, MaxPricePriority, MinPricePriority},
     errors,
     order::{Order, Side, ID},
 };
@@ -275,13 +275,15 @@ impl OrderBook {
         // inits
         let mut quantity_fulfilled = Decimal::ZERO;
         let mut cost = Decimal::ZERO;
-        let mut buy_side_iter = self.buy_side.iter();
-        let mut sell_side_iter = self.sell_side.iter();
+        let mut oppisite_side_iter = match side {
+            Side::Buy => BookSideIter::SellSide(self.sell_side.iter()),
+            Side::Sell => BookSideIter::BuySide(self.buy_side.iter()),
+        };
 
         while !quantity.is_zero() {
-            let shared_order = match side {
-                Side::Buy => sell_side_iter.next().map(|(_, shared_order)| shared_order),
-                Side::Sell => buy_side_iter.next().map(|(_, shared_order)| shared_order),
+            let shared_order = match oppisite_side_iter {
+                BookSideIter::BuySide(ref mut iter) => iter.next().map(|(_, shared_order)| shared_order),
+                BookSideIter::SellSide(ref mut iter) => iter.next().map(|(_, shared_order)| shared_order),
             };
             let order = match shared_order {
                 Some(val) => val.borrow(),
