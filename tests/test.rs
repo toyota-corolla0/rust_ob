@@ -181,29 +181,85 @@ fn cancel_order_benchmark() {
 }
 
 #[test]
-fn find_market_cost() {
-    const ITERATIONS: u128 = 1000000;
+fn find_market_cost1() {
+    let ob = OrderBook::new();
 
-    
+    assert_eq!(
+        ob.find_market_cost(Side::Buy, Decimal::from(0))
+            .unwrap_err(),
+        errors::FindMarketCost::NonPositiveQuantity
+    );
+    assert_eq!(
+        ob.find_market_cost(Side::Buy, Decimal::from(-1))
+            .unwrap_err(),
+        errors::FindMarketCost::NonPositiveQuantity
+    );
+}
+
+#[test]
+fn find_market_cost2() {
     let mut ob = OrderBook::new();
-    for i in 0..ITERATIONS {
-        let side = if i%2 == 0 {
-            Side::Buy
-        } else {
-            Side::Sell
-        };
 
-        let _ = ob.process_limit_order(
-            i,
-            side,
-            Decimal::from(random::<u8>()),
-            Decimal::from(1),
-        );
-    }
+    assert_eq!(
+        ob.process_limit_order(1, Side::Buy, Decimal::from(20), Decimal::from(5))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(2, Side::Buy, Decimal::from(15), Decimal::from(3))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(3, Side::Sell, Decimal::from(35), Decimal::from(10))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(4, Side::Sell, Decimal::from(50), Decimal::from(4))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(5, Side::Sell, Decimal::from(30), Decimal::from(15))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(6, Side::Buy, Decimal::from(20), Decimal::from(2))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(7, Side::Sell, Decimal::from(35), Decimal::from(7))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(8, Side::Buy, Decimal::from(15), Decimal::from(9))
+            .unwrap()
+            .len(),
+        0
+    );
 
     println!("{ob}");
 
-    println!("{:?}", ob.find_market_cost(Side::Buy, Decimal::from(3)).unwrap())
+    assert_eq!(
+        ob.find_market_cost(Side::Sell, Decimal::from(17)).unwrap(),
+        (Decimal::from(17), Decimal::from(-290))
+    );
+
+    assert_eq!(
+        ob.find_market_cost(Side::Buy, Decimal::from(55)).unwrap(),
+        (Decimal::from(36), Decimal::from(450 + 350 + 245 + 200))
+    );
 }
 
 #[test]
