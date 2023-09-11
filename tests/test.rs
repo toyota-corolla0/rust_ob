@@ -263,6 +263,66 @@ fn find_market_cost2() {
 }
 
 #[test]
+fn process_market_order1() {
+    let mut ob = OrderBook::new();
+
+    assert_eq!(
+        ob.process_market_order(1, Side::Buy, Decimal::from(-5)),
+        Err(errors::ProcessMarketOrder::NonPositiveQuantity)
+    );
+
+    assert_eq!(
+        ob.process_market_order(2, Side::Sell, Decimal::from(10))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(ob.cancel_order(2), Err(errors::CancelOrder::OrderNotFound));
+
+    _ = ob.process_limit_order(3, Side::Sell, Decimal::from(20), Decimal::from(10));
+    assert_eq!(
+        ob.process_market_order(3, Side::Buy, Decimal::from(10)),
+        Err(errors::ProcessMarketOrder::OrderAlreadyExists)
+    );
+
+    assert_eq!(
+        ob.process_market_order(4, Side::Buy, Decimal::from(5))
+            .unwrap(),
+        vec![
+            OrderMatch {
+                order: 3,
+                quantity: Decimal::from(5),
+                cost: Decimal::from(-100)
+            },
+            OrderMatch {
+                order: 4,
+                quantity: Decimal::from(5),
+                cost: Decimal::from(100)
+            },
+        ]
+    );
+
+    assert_eq!(
+        ob.process_market_order(5, Side::Buy, Decimal::from(8))
+            .unwrap(),
+        vec![
+            OrderMatch {
+                order: 3,
+                quantity: Decimal::from(5),
+                cost: Decimal::from(-100)
+            },
+            OrderMatch {
+                order: 5,
+                quantity: Decimal::from(5),
+                cost: Decimal::from(100)
+            },
+        ]
+    );
+
+    assert_eq!(ob.cancel_order(5), Err(errors::CancelOrder::OrderNotFound));
+}
+
+#[test]
 fn general1() {
     let mut ob = OrderBook::new();
 

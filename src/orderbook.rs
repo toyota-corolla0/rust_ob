@@ -4,7 +4,7 @@ use rust_decimal::Decimal;
 
 use crate::{
     bookside::{BookSide, BookSideIter, MaxPricePriority, MinPricePriority},
-    errors::{self, ProcessMarketOrder, ProcessLimitOrder},
+    errors::{self, ProcessLimitOrder, ProcessMarketOrder},
     order::{Order, Side, ID},
 };
 
@@ -260,7 +260,7 @@ impl OrderBook {
         }
     }
 
-    ///
+    /// TODO
     /// (quantity_fulfilled, cost)
     pub fn find_market_cost(
         &self,
@@ -323,6 +323,7 @@ impl OrderBook {
         Ok((quantity_fulfilled, cost))
     }
 
+    /// TODO
     pub fn process_market_order(
         &mut self,
         id: ID,
@@ -335,10 +336,12 @@ impl OrderBook {
             Side::Sell => Decimal::MIN,
         };
 
-        let result = self.process_limit_order(id, side, price, quantity).map_err(|e| match e {
-            ProcessLimitOrder::NonPositiveQuantity => ProcessMarketOrder::NonPositiveQuantity,
-            ProcessLimitOrder::OrderAlreadyExists => ProcessMarketOrder::OrderAlreadyExists
-        });
+        let result = self
+            .process_limit_order(id, side, price, quantity)
+            .map_err(|e| match e {
+                ProcessLimitOrder::NonPositiveQuantity => ProcessMarketOrder::NonPositiveQuantity,
+                ProcessLimitOrder::OrderAlreadyExists => ProcessMarketOrder::OrderAlreadyExists,
+            });
 
         if let Ok(ref order_match_vec) = result {
             if order_match_vec.len() == 0 || order_match_vec.last().unwrap().quantity != quantity {

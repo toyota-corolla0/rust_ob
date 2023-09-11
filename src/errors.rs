@@ -14,6 +14,7 @@ pub enum FindMarketCost {
     NonPositiveQuantity
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub enum ProcessMarketOrder {
     OrderAlreadyExists,
     NonPositiveQuantity,
