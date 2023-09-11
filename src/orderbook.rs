@@ -4,7 +4,7 @@ use rust_decimal::Decimal;
 
 use crate::{
     bookside::{BookSide, BookSideIter, MaxPricePriority, MinPricePriority},
-    errors,
+    errors::{self, ProcessMarketOrder, ProcessLimitOrder},
     order::{Order, Side, ID},
 };
 
@@ -282,8 +282,12 @@ impl OrderBook {
 
         while !quantity.is_zero() {
             let shared_order = match oppisite_side_iter {
-                BookSideIter::BuySide(ref mut iter) => iter.next().map(|(_, shared_order)| shared_order),
-                BookSideIter::SellSide(ref mut iter) => iter.next().map(|(_, shared_order)| shared_order),
+                BookSideIter::BuySide(ref mut iter) => {
+                    iter.next().map(|(_, shared_order)| shared_order)
+                }
+                BookSideIter::SellSide(ref mut iter) => {
+                    iter.next().map(|(_, shared_order)| shared_order)
+                }
             };
             let order = match shared_order {
                 Some(val) => val.borrow(),
@@ -317,6 +321,33 @@ impl OrderBook {
         }
 
         Ok((quantity_fulfilled, cost))
+    }
+
+    pub fn process_market_order(
+        &mut self,
+        id: ID,
+        side: Side,
+        quantity: Decimal,
+    ) -> Result<Vec<OrderMatch>, ProcessMarketOrder> {
+        // get min or max price based on side
+        let price = match side {
+            Side::Buy => Decimal::MAX,
+            Side::Sell => Decimal::MIN,
+        };
+
+        let result = self.process_limit_order(id, side, price, quantity).map_err(|e| match e {
+            ProcessLimitOrder::NonPositiveQuantity => ProcessMarketOrder::NonPositiveQuantity,
+            ProcessLimitOrder::OrderAlreadyExists => ProcessMarketOrder::OrderAlreadyExists
+        });
+
+        if let Ok(ref order_match_vec) = result {
+            if order_match_vec.len() == 0 || order_match_vec.last().unwrap().quantity != quantity {
+                let result = self.cancel_order(id);
+                assert_eq!(result, Ok(()));
+            }
+        }
+
+        result
     }
 
     fn get_priority(&mut self) -> u64 {

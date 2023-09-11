@@ -13,3 +13,8 @@ pub enum CancelOrder {
 pub enum FindMarketCost {
     NonPositiveQuantity
 }
+
+pub enum ProcessMarketOrder {
+    OrderAlreadyExists,
+    NonPositiveQuantity,
+}
