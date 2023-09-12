@@ -450,8 +450,11 @@ impl Display for OrderBook {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct OrderMatch {
+    // ID of order
     pub order: ID,
+    // Quantity of order fulfilled
     pub quantity: Decimal,
+    // Cost to buy/sell quantity
     pub cost: Decimal,
 }
 
