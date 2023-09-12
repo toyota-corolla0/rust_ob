@@ -453,6 +453,7 @@ pub struct OrderMatch {
     /// ID of order
     pub order: ID,
     /// Quantity of order fulfilled
+    /// Quantity is always positive
     pub quantity: Decimal,
     /// Cost to buy/sell quantity
     /// - Positive priced buys will result in a positive cost
