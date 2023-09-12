@@ -84,8 +84,6 @@ impl OrderBook {
     /// // possible errors
     /// assert_eq!(ob.process_limit_order(4, Side::Buy, Decimal::from(10), Decimal::from(0)).unwrap_err(), errors::ProcessLimitOrder::NonPositiveQuantity);
     /// assert_eq!(ob.process_limit_order(1, Side::Buy, Decimal::from(10), Decimal::from(25)).unwrap_err(), errors::ProcessLimitOrder::OrderAlreadyExists);
-    ///
-    ///
     /// ```
     pub fn process_limit_order(
         &mut self,

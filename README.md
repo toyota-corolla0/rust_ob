@@ -3,7 +3,7 @@ An orderbook library for rust
 
 ### Features
 - standard price-time priority
-- execution of limit and market order
+- execution of limit and market orders
 - support for negative prices
 
 ### Usage
