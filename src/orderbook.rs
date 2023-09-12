@@ -342,7 +342,7 @@ impl OrderBook {
         Ok((quantity_fulfilled, cost))
     }
 
-    /// TODO
+    /// Process new market order
     /// ```
     /// use rust_ob::{
     ///     OrderBook,
