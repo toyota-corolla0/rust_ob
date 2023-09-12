@@ -260,16 +260,35 @@ impl OrderBook {
         }
     }
 
-    /// TODO
-    /// (quantity_fulfilled, cost)
-    pub fn find_market_cost(
+    /// Calculates cost to buy/sell up to quantity.
+    /// This function does not mutate anything in OrderBook.
+    /// The return tuple is in format (quantity_fulfilled, cost).
+    /// ```
+    /// use rust_ob::{
+    ///     OrderBook,
+    ///     Side,
+    ///     errors,
+    /// };
+    /// use rust_decimal::Decimal;
+    ///
+    /// let mut ob = OrderBook::new();
+    /// let _ = ob.process_limit_order(1, Side::Buy, Decimal::from(5), Decimal::from(5));
+    /// let _ = ob.process_limit_order(2, Side::Buy, Decimal::from(3), Decimal::from(3));
+    ///
+    /// assert_eq!(ob.calculate_market_cost(Side::Sell, Decimal::from(6)).unwrap(), (Decimal::from(6), Decimal::from(-28))); 
+    /// assert_eq!(ob.calculate_market_cost(Side::Sell, Decimal::from(12)).unwrap(), (Decimal::from(8), Decimal::from(-34))); 
+    /// 
+    /// // possible errors
+    /// assert_eq!(ob.calculate_market_cost(Side::Sell, Decimal::from(0)), Err(errors::CalculateMarketCost::NonPositiveQuantity));
+    /// ```
+    pub fn calculate_market_cost(
         &self,
         side: Side,
         mut quantity: Decimal,
-    ) -> Result<(Decimal, Decimal), errors::FindMarketCost> {
+    ) -> Result<(Decimal, Decimal), errors::CalculateMarketCost> {
         // check to ensure positive quantity
         if quantity <= Decimal::ZERO {
-            return Err(errors::FindMarketCost::NonPositiveQuantity);
+            return Err(errors::CalculateMarketCost::NonPositiveQuantity);
         }
 
         // inits

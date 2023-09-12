@@ -10,7 +10,7 @@ pub enum CancelOrder {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum FindMarketCost {
+pub enum CalculateMarketCost {
     NonPositiveQuantity
 }
 
