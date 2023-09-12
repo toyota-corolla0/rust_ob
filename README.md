@@ -21,6 +21,7 @@ fn main() {
 
         use errors::ProcessLimitOrder as E;
         let order_match_vec = match result {
+            Ok(v) => v,
             Err(E::OrderAlreadyExists) => {
                 // handle error
                 panic!()
@@ -29,7 +30,6 @@ fn main() {
                 // handle error
                 panic!()
             }
-            Ok(v) => v,
         };
 
         for order_match in order_match_vec {
