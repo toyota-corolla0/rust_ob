@@ -452,14 +452,14 @@ impl Display for OrderBook {
 pub struct OrderMatch {
     /// ID of order
     pub order: ID,
-    /// Quantity of order fulfilled
-    /// Quantity is always positive
+    /// Quantity of order just fulfilled
+    /// - Always positive
     pub quantity: Decimal,
     /// Cost to buy/sell quantity
-    /// - Positive priced buys will result in a positive cost
-    /// - Positive priced sells will result in a negative cost
-    /// - Negatively priced buys will result in a negative cost
-    /// - Negatively priced sell will result in a positive cost
+    /// - Positive priced buys add to cost
+    /// - Positive priced sells subract from cost
+    /// - Negatively priced buys subract from cost
+    /// - Negatively priced sell add to cost
     pub cost: Decimal,
 }
 
