@@ -79,7 +79,7 @@ impl OrderBook {
     ///
     /// // quantity on sell orders == quantity on buy orders
     /// // last OrderMatch of Vec (if not empty) is always the order just placed
-    /// assert_eq!(res3.iter().map(|val| val.quantity).sum::<Decimal>(), res3.last().unwrap().quantity * Decimal::from(2));
+    /// assert_eq!(res3.iter().take(res3.len()-1).map(|val| val.quantity).sum::<Decimal>(), res3.last().unwrap().quantity);
     ///
     /// // possible errors
     /// assert_eq!(ob.process_limit_order(4, Side::Buy, Decimal::from(10), Decimal::from(0)).unwrap_err(), errors::ProcessLimitOrder::NonPositiveQuantity);
