@@ -376,6 +376,11 @@ fn general1() {
     );
 
     assert_eq!(
+        ob.find_market_cost(Side::Sell, Decimal::from(25)).unwrap(),
+        (Decimal::from(19), Decimal::from(-(140 + 180)))
+    );
+
+    assert_eq!(
         ob.process_limit_order(9, Side::Buy, Decimal::from(33), Decimal::from(22))
             .unwrap(),
         vec![
@@ -430,6 +435,11 @@ fn general1() {
     );
 
     assert_eq!(
+        ob.find_market_cost(Side::Buy, Decimal::from(18)).unwrap(),
+        (Decimal::from(18), Decimal::from(35 * 17 + 50))
+    );
+
+    assert_eq!(
         ob.process_limit_order(11, Side::Buy, Decimal::from(-5), Decimal::from(4))
             .unwrap()
             .len(),
@@ -444,6 +454,11 @@ fn general1() {
 
     assert_eq!(ob.cancel_order(4), Ok(()));
     assert_eq!(ob.cancel_order(4), Err(errors::CancelOrder::OrderNotFound));
+
+    assert_eq!(
+        ob.find_market_cost(Side::Sell, Decimal::from(18)).unwrap(),
+        (Decimal::from(18), Decimal::from(-(15*8-5*4-10*6)))
+    );
 
     assert_eq!(
         ob.process_limit_order(13, Side::Buy, Decimal::from(38), Decimal::from(25))
