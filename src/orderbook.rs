@@ -343,6 +343,44 @@ impl OrderBook {
     }
 
     /// TODO
+    /// ```
+    /// use rust_ob::{
+    ///     OrderBook,
+    ///     Side,
+    ///     OrderMatch,
+    ///     errors,
+    /// };
+    /// use rust_decimal::Decimal;
+    ///
+    /// let mut ob = OrderBook::new();
+    /// let _ = ob.process_limit_order(1, Side::Sell, Decimal::from(5), Decimal::from(5));
+    /// let _ = ob.process_limit_order(2, Side::Sell, Decimal::from(3), Decimal::from(3));
+    ///
+    /// assert_eq!(
+    ///     ob.process_market_order(3, Side::Buy, Decimal::from(6)).unwrap(), 
+    ///     vec![
+    ///         OrderMatch {
+    ///             order: 2,
+    ///             quantity: Decimal::from(3),
+    ///             cost: Decimal::from(-9)
+    ///         },
+    ///         OrderMatch {
+    ///             order: 1,
+    ///             quantity: Decimal::from(3),
+    ///             cost: Decimal::from(-15)
+    ///         },
+    ///         OrderMatch {
+    ///             order: 3,
+    ///             quantity: Decimal::from(6),
+    ///             cost: Decimal::from(24)
+    ///         }
+    ///     ]
+    /// );
+    ///
+    /// // possible errors
+    /// assert_eq!(ob.process_market_order(4, Side::Buy, Decimal::from(0)), Err(errors::ProcessMarketOrder::NonPositiveQuantity));
+    /// assert_eq!(ob.process_market_order(1, Side::Buy, Decimal::from(3)), Err(errors::ProcessMarketOrder::OrderAlreadyExists));
+    /// ```
     pub fn process_market_order(
         &mut self,
         id: ID,
@@ -364,8 +402,7 @@ impl OrderBook {
 
         if let Ok(ref order_match_vec) = result {
             if order_match_vec.len() == 0 || order_match_vec.last().unwrap().quantity != quantity {
-                let result = self.cancel_order(id);
-                assert_eq!(result, Ok(()));
+                assert_eq!(self.cancel_order(id), Ok(()));
             }
         }
 
