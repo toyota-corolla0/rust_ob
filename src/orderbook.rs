@@ -4,7 +4,7 @@ use rust_decimal::Decimal;
 
 use crate::{
     bookside::{BookSide, MaxPricePriority, MinPricePriority},
-    errors::{self, ProcessLimitOrder, ProcessMarketOrder},
+    errors,
     order::{Order, Side, ID},
 };
 
@@ -377,7 +377,7 @@ impl OrderBook {
         id: ID,
         side: Side,
         quantity: Decimal,
-    ) -> Result<Vec<OrderMatch>, ProcessMarketOrder> {
+    ) -> Result<Vec<OrderMatch>, errors::ProcessMarketOrder> {
         // get min or max price based on side
         let price = match side {
             Side::Buy => Decimal::MAX,
@@ -387,8 +387,8 @@ impl OrderBook {
         let result = self
             .process_limit_order(id, side, price, quantity)
             .map_err(|e| match e {
-                ProcessLimitOrder::NonPositiveQuantity => ProcessMarketOrder::NonPositiveQuantity,
-                ProcessLimitOrder::OrderAlreadyExists => ProcessMarketOrder::OrderAlreadyExists,
+                errors::ProcessLimitOrder::NonPositiveQuantity => errors::ProcessMarketOrder::NonPositiveQuantity,
+                errors::ProcessLimitOrder::OrderAlreadyExists => errors::ProcessMarketOrder::OrderAlreadyExists,
             });
 
         if let Ok(ref order_match_vec) = result {

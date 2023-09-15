@@ -67,67 +67,76 @@ pub trait Key: Ord {
 }
 
 #[derive(Debug, Clone)]
-pub struct MinPricePriority(Decimal, u64);
+pub struct MinPricePriority {
+    price: Decimal,
+    priority: u64,
+}
 
 impl Key for MinPricePriority {
     fn new(price: Decimal, priority: u64) -> Self {
-        MinPricePriority(price, priority)
+        MinPricePriority { price, priority }
     }
 }
 impl PartialEq for MinPricePriority {
     fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0 && self.1 == other.1
+        self.price == other.price && self.priority == other.priority
     }
 }
 impl PartialOrd for MinPricePriority {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self.0.partial_cmp(&other.0) {
+        match self.price.partial_cmp(&other.price) {
             Some(core::cmp::Ordering::Equal) => {}
             ord => return ord,
         }
-        self.1.partial_cmp(&other.1)
+        self.priority.partial_cmp(&other.priority)
     }
 }
 impl Eq for MinPricePriority {}
 impl Ord for MinPricePriority {
     fn cmp(&self, other: &Self) -> Ordering {
-        match self.0.cmp(&other.0) {
+        match self.price.cmp(&other.price) {
             core::cmp::Ordering::Equal => {}
             ord => return ord,
         }
-        self.1.cmp(&other.1)
+        self.priority.cmp(&other.priority)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct MaxPricePriority(Decimal, u64);
+pub struct MaxPricePriority {
+    price: Decimal,
+    priority: u64,
+}
 
 impl Key for MaxPricePriority {
     fn new(price: Decimal, priority: u64) -> Self {
-        MaxPricePriority(price, priority)
+        MaxPricePriority {
+            price,
+            priority,
+        }
     }
 }
 impl PartialEq for MaxPricePriority {
     fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0 && self.1 == other.1
+        self.price == other.price && self.priority == other.priority
     }
 }
 impl PartialOrd for MaxPricePriority {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match other.0.partial_cmp(&self.0) {
+        match other.price.partial_cmp(&self.price) {
             Some(core::cmp::Ordering::Equal) => {}
             ord => return ord,
         }
-        self.1.partial_cmp(&other.1)
+        self.priority.partial_cmp(&other.priority)
     }
 }
 impl Eq for MaxPricePriority {}
 impl Ord for MaxPricePriority {
     fn cmp(&self, other: &Self) -> Ordering {
-        match other.0.cmp(&self.0) {
+        match other.price.cmp(&self.price) {
             core::cmp::Ordering::Equal => {}
             ord => return ord,
         }
-        self.1.cmp(&other.1)
+        self.priority.cmp(&other.priority)
     }
 }
