@@ -1,6 +1,10 @@
-use std::{cell::RefCell, cmp::Ordering, rc::Rc};
+use std::{
+    cell::RefCell,
+    cmp::Ordering,
+    collections::{btree_map::Iter, BTreeMap},
+    rc::Rc,
+};
 
-use rb_tree::{rbmap::Iter, RBMap};
 use rust_decimal::Decimal;
 
 use crate::order::Order;
@@ -8,18 +12,18 @@ use crate::order::Order;
 #[derive(Debug)]
 pub struct BookSide<K>
 where
-    K: RBMapKey,
+    K: Key,
 {
-    price_tree: RBMap<K, Rc<RefCell<Order>>>,
+    price_tree: BTreeMap<K, Rc<RefCell<Order>>>,
 }
 
 impl<K> BookSide<K>
 where
-    K: RBMapKey,
+    K: Key,
 {
     pub fn new() -> Self {
         BookSide {
-            price_tree: RBMap::new(),
+            price_tree: BTreeMap::new(),
         }
     }
 
@@ -48,12 +52,14 @@ where
     }
 
     pub fn get_highest_priority(&self) -> Option<&Rc<RefCell<Order>>> {
-        self.price_tree.peek()
+        self.price_tree
+            .first_key_value()
+            .map(|(_, shared_order)| shared_order)
     }
 
     /// does not panic if there is no order to pop
     pub fn pop_highest_priority(&mut self) {
-        self.price_tree.pop();
+        self.price_tree.pop_first();
     }
 
     pub fn iter(&self) -> Iter<'_, K, Rc<RefCell<Order>>> {
@@ -61,14 +67,14 @@ where
     }
 }
 
-pub trait RBMapKey: PartialOrd + Clone {
+pub trait Key: PartialOrd + Clone + Ord {
     fn new(price: Decimal, priority: u64) -> Self;
 }
 
 #[derive(Debug, Clone)]
 pub struct MinPricePriority(Decimal, u64);
 
-impl RBMapKey for MinPricePriority {
+impl Key for MinPricePriority {
     fn new(price: Decimal, priority: u64) -> Self {
         MinPricePriority(price, priority)
     }
@@ -87,11 +93,21 @@ impl PartialOrd for MinPricePriority {
         self.1.partial_cmp(&other.1)
     }
 }
+impl Eq for MinPricePriority {}
+impl Ord for MinPricePriority {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.0.cmp(&other.0) {
+            core::cmp::Ordering::Equal => {}
+            ord => return ord,
+        }
+        self.1.cmp(&other.1)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct MaxPricePriority(Decimal, u64);
 
-impl RBMapKey for MaxPricePriority {
+impl Key for MaxPricePriority {
     fn new(price: Decimal, priority: u64) -> Self {
         MaxPricePriority(price, priority)
     }
@@ -110,8 +126,18 @@ impl PartialOrd for MaxPricePriority {
         self.1.partial_cmp(&other.1)
     }
 }
+impl Eq for MaxPricePriority {}
+impl Ord for MaxPricePriority {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match other.0.cmp(&self.0) {
+            core::cmp::Ordering::Equal => {}
+            ord => return ord,
+        }
+        self.1.cmp(&other.1)
+    }
+}
 
 pub enum BookSideIter<'a> {
-    BuySide(Iter<'a,MaxPricePriority, Rc<RefCell<Order>>>),
-    SellSide(Iter<'a,MinPricePriority, Rc<RefCell<Order>>>)
+    BuySide(Iter<'a, MaxPricePriority, Rc<RefCell<Order>>>),
+    SellSide(Iter<'a, MinPricePriority, Rc<RefCell<Order>>>),
 }
