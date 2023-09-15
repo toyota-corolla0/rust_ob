@@ -84,11 +84,7 @@ impl PartialEq for MinPricePriority {
 }
 impl PartialOrd for MinPricePriority {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self.price.partial_cmp(&other.price) {
-            Some(core::cmp::Ordering::Equal) => {}
-            ord => return ord,
-        }
-        self.priority.partial_cmp(&other.priority)
+        Some(self.cmp(other))
     }
 }
 impl Eq for MinPricePriority {}
@@ -123,11 +119,7 @@ impl PartialEq for MaxPricePriority {
 }
 impl PartialOrd for MaxPricePriority {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match other.price.partial_cmp(&self.price) {
-            Some(core::cmp::Ordering::Equal) => {}
-            ord => return ord,
-        }
-        self.priority.partial_cmp(&other.priority)
+        Some(self.cmp(other))
     }
 }
 impl Eq for MaxPricePriority {}
