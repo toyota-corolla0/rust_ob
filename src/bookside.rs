@@ -1,9 +1,4 @@
-use std::{
-    cell::RefCell,
-    cmp::Ordering,
-    collections::{btree_map::Iter, BTreeMap},
-    rc::Rc,
-};
+use std::{cell::RefCell, cmp::Ordering, collections::BTreeMap, rc::Rc};
 
 use rust_decimal::Decimal;
 
@@ -62,12 +57,12 @@ where
         self.price_tree.pop_first();
     }
 
-    pub fn iter(&self) -> Iter<'_, K, Rc<RefCell<Order>>> {
-        self.price_tree.iter()
+    pub fn iter<'a>(&'a self) -> Box<dyn DoubleEndedIterator<Item = &Rc<RefCell<Order>>> + 'a> {
+        Box::new(self.price_tree.iter().map(|(_, a)| a))
     }
 }
 
-pub trait Key: PartialOrd + Clone + Ord {
+pub trait Key: Ord {
     fn new(price: Decimal, priority: u64) -> Self;
 }
 
@@ -135,9 +130,4 @@ impl Ord for MaxPricePriority {
         }
         self.1.cmp(&other.1)
     }
-}
-
-pub enum BookSideIter<'a> {
-    BuySide(Iter<'a, MaxPricePriority, Rc<RefCell<Order>>>),
-    SellSide(Iter<'a, MinPricePriority, Rc<RefCell<Order>>>),
 }

@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 use rust_decimal::Decimal;
 
 use crate::{
-    bookside::{BookSide, BookSideIter, MaxPricePriority, MinPricePriority},
+    bookside::{BookSide, MaxPricePriority, MinPricePriority},
     errors::{self, ProcessLimitOrder, ProcessMarketOrder},
     order::{Order, Side, ID},
 };
@@ -273,9 +273,9 @@ impl OrderBook {
     /// let _ = ob.process_limit_order(1, Side::Buy, Decimal::from(5), Decimal::from(5));
     /// let _ = ob.process_limit_order(2, Side::Buy, Decimal::from(3), Decimal::from(3));
     ///
-    /// assert_eq!(ob.calculate_market_cost(Side::Sell, Decimal::from(6)).unwrap(), (Decimal::from(6), Decimal::from(-28))); 
-    /// assert_eq!(ob.calculate_market_cost(Side::Sell, Decimal::from(12)).unwrap(), (Decimal::from(8), Decimal::from(-34))); 
-    /// 
+    /// assert_eq!(ob.calculate_market_cost(Side::Sell, Decimal::from(6)).unwrap(), (Decimal::from(6), Decimal::from(-28)));
+    /// assert_eq!(ob.calculate_market_cost(Side::Sell, Decimal::from(12)).unwrap(), (Decimal::from(8), Decimal::from(-34)));
+    ///
     /// // possible errors
     /// assert_eq!(ob.calculate_market_cost(Side::Sell, Decimal::from(0)), Err(errors::CalculateMarketCost::NonPositiveQuantity));
     /// ```
@@ -293,19 +293,12 @@ impl OrderBook {
         let mut quantity_fulfilled = Decimal::ZERO;
         let mut cost = Decimal::ZERO;
         let mut oppisite_side_iter = match side {
-            Side::Buy => BookSideIter::SellSide(self.sell_side.iter()),
-            Side::Sell => BookSideIter::BuySide(self.buy_side.iter()),
+            Side::Buy => self.sell_side.iter(),
+            Side::Sell => self.buy_side.iter(),
         };
 
         while !quantity.is_zero() {
-            let shared_order = match oppisite_side_iter {
-                BookSideIter::BuySide(ref mut iter) => {
-                    iter.next().map(|(_, shared_order)| shared_order)
-                }
-                BookSideIter::SellSide(ref mut iter) => {
-                    iter.next().map(|(_, shared_order)| shared_order)
-                }
-            };
+            let shared_order = oppisite_side_iter.next();
             let order = match shared_order {
                 Some(val) => val.borrow(),
                 None => break,
@@ -355,7 +348,7 @@ impl OrderBook {
     /// let _ = ob.process_limit_order(2, Side::Sell, Decimal::from(3), Decimal::from(3));
     ///
     /// assert_eq!(
-    ///     ob.process_market_order(3, Side::Buy, Decimal::from(6)).unwrap(), 
+    ///     ob.process_market_order(3, Side::Buy, Decimal::from(6)).unwrap(),
     ///     vec![
     ///         OrderMatch {
     ///             order: 2,
@@ -422,17 +415,7 @@ impl Display for OrderBook {
             "ID", "SIDE", "PRICE", "QUANTITY"
         )?;
 
-        let sell_side: Vec<Rc<RefCell<Order>>> = self
-            .sell_side
-            .iter()
-            .map(|(_, shared_order)| shared_order.clone())
-            .collect();
-
-        for shared_order in sell_side
-            .iter()
-            .rev()
-            .chain(self.buy_side.iter().map(|(_, shared_order)| shared_order))
-        {
+        for shared_order in self.sell_side.iter().rev().chain(self.buy_side.iter()) {
             let order = shared_order.borrow();
             writeln!(
                 f,
