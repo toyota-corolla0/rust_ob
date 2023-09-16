@@ -88,13 +88,13 @@ where
         Some(self.cmp(other))
     }
 }
+impl<T> Eq for BookSideKey<T> {}
 
 #[derive(Debug)]
 pub struct MinPricePriority;
 #[derive(Debug)]
 pub struct MaxPricePriority;
 
-impl<T> Eq for BookSideKey<T> {}
 impl Ord for BookSideKey<MinPricePriority> {
     fn cmp(&self, other: &Self) -> Ordering {
         match self.price.cmp(&other.price) {
