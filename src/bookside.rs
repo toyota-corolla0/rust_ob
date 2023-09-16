@@ -1,24 +1,24 @@
-use std::{cell::RefCell, cmp::Ordering, collections::BTreeMap, rc::Rc};
+use std::{cell::RefCell, cmp::Ordering, collections::BTreeMap, marker::PhantomData, rc::Rc};
 
 use rust_decimal::Decimal;
 
 use crate::order::Order;
 
 #[derive(Debug)]
-pub struct BookSide<K>
+pub struct BookSide<T>
 where
-    K: Key,
+    BookSideKey<T>: Ord,
 {
-    price_tree: BTreeMap<K, Rc<RefCell<Order>>>,
+    search_tree: BTreeMap<BookSideKey<T>, Rc<RefCell<Order>>>,
 }
 
-impl<K> BookSide<K>
+impl<T> BookSide<T>
 where
-    K: Key,
+    BookSideKey<T>: Ord,
 {
     pub fn new() -> Self {
         BookSide {
-            price_tree: BTreeMap::new(),
+            search_tree: BTreeMap::new(),
         }
     }
 
@@ -28,67 +28,74 @@ where
         let key;
         {
             let order = shared_order.borrow();
-            key = K::new(order.price, order.priority);
+            key = BookSideKey::new(order.price, order.priority);
         }
 
-        self.price_tree.insert(key, shared_order);
+        self.search_tree.insert(key, shared_order);
     }
 
     /// does not panic if order can't be found
     pub fn remove(&mut self, shared_order: Rc<RefCell<Order>>) {
-        let key;
+        let order = shared_order.borrow();
+        let key = BookSideKey::new(order.price, order.priority);
 
-        {
-            let order = shared_order.borrow();
-            key = K::new(order.price, order.priority);
-        }
-
-        self.price_tree.remove(&key);
+        self.search_tree.remove(&key);
     }
 
     pub fn get_highest_priority(&self) -> Option<&Rc<RefCell<Order>>> {
-        self.price_tree
+        self.search_tree
             .first_key_value()
             .map(|(_, shared_order)| shared_order)
     }
 
     /// does not panic if there is no order to pop
     pub fn pop_highest_priority(&mut self) {
-        self.price_tree.pop_first();
+        self.search_tree.pop_first();
     }
 
     pub fn iter<'a>(&'a self) -> Box<dyn DoubleEndedIterator<Item = &Rc<RefCell<Order>>> + 'a> {
-        Box::new(self.price_tree.iter().map(|(_, a)| a))
+        Box::new(self.search_tree.iter().map(|(_, a)| a))
     }
-}
-
-pub trait Key: Ord {
-    fn new(price: Decimal, priority: u64) -> Self;
 }
 
 #[derive(Debug, Clone)]
-pub struct MinPricePriority {
+pub struct BookSideKey<T> {
     price: Decimal,
     priority: u64,
+
+    _marker: PhantomData<T>,
 }
 
-impl Key for MinPricePriority {
+impl<T> BookSideKey<T> {
     fn new(price: Decimal, priority: u64) -> Self {
-        MinPricePriority { price, priority }
+        BookSideKey {
+            price,
+            priority,
+            _marker: PhantomData,
+        }
     }
 }
-impl PartialEq for MinPricePriority {
+impl<T> PartialEq for BookSideKey<T> {
     fn eq(&self, other: &Self) -> bool {
         self.price == other.price && self.priority == other.priority
     }
 }
-impl PartialOrd for MinPricePriority {
+impl<T> PartialOrd for BookSideKey<T>
+where
+    Self: Ord,
+{
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
-impl Eq for MinPricePriority {}
-impl Ord for MinPricePriority {
+
+#[derive(Debug)]
+pub struct MinPricePriority;
+#[derive(Debug)]
+pub struct MaxPricePriority;
+
+impl<T> Eq for BookSideKey<T> {}
+impl Ord for BookSideKey<MinPricePriority> {
     fn cmp(&self, other: &Self) -> Ordering {
         match self.price.cmp(&other.price) {
             core::cmp::Ordering::Equal => {}
@@ -97,33 +104,7 @@ impl Ord for MinPricePriority {
         self.priority.cmp(&other.priority)
     }
 }
-
-#[derive(Debug, Clone)]
-pub struct MaxPricePriority {
-    price: Decimal,
-    priority: u64,
-}
-
-impl Key for MaxPricePriority {
-    fn new(price: Decimal, priority: u64) -> Self {
-        MaxPricePriority {
-            price,
-            priority,
-        }
-    }
-}
-impl PartialEq for MaxPricePriority {
-    fn eq(&self, other: &Self) -> bool {
-        self.price == other.price && self.priority == other.priority
-    }
-}
-impl PartialOrd for MaxPricePriority {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl Eq for MaxPricePriority {}
-impl Ord for MaxPricePriority {
+impl Ord for BookSideKey<MaxPricePriority> {
     fn cmp(&self, other: &Self) -> Ordering {
         match other.price.cmp(&self.price) {
             core::cmp::Ordering::Equal => {}
