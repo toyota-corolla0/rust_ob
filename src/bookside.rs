@@ -9,7 +9,7 @@ pub struct BookSide<T>
 where
     BookSideKey<T>: Ord,
 {
-    search_tree: BTreeMap<BookSideKey<T>, Rc<RefCell<Order>>>,
+    tree: BTreeMap<BookSideKey<T>, Rc<RefCell<Order>>>,
 }
 
 impl<T> BookSide<T>
@@ -18,7 +18,7 @@ where
 {
     pub fn new() -> Self {
         BookSide {
-            search_tree: BTreeMap::new(),
+            tree: BTreeMap::new(),
         }
     }
 
@@ -31,7 +31,7 @@ where
             key = BookSideKey::new(order.price, order.priority);
         }
 
-        self.search_tree.insert(key, shared_order);
+        self.tree.insert(key, shared_order);
     }
 
     /// does not panic if order can't be found
@@ -39,22 +39,22 @@ where
         let order = shared_order.borrow();
         let key = BookSideKey::new(order.price, order.priority);
 
-        self.search_tree.remove(&key);
+        self.tree.remove(&key);
     }
 
     pub fn get_highest_priority(&self) -> Option<&Rc<RefCell<Order>>> {
-        self.search_tree
+        self.tree
             .first_key_value()
             .map(|(_, shared_order)| shared_order)
     }
 
     /// does not panic if there is no order to pop
     pub fn pop_highest_priority(&mut self) {
-        self.search_tree.pop_first();
+        self.tree.pop_first();
     }
 
     pub fn iter<'a>(&'a self) -> Box<dyn DoubleEndedIterator<Item = &Rc<RefCell<Order>>> + 'a> {
-        Box::new(self.search_tree.iter().map(|(_, a)| a))
+        Box::new(self.tree.iter().map(|(_, a)| a))
     }
 }
 
