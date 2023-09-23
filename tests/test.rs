@@ -182,7 +182,7 @@ fn cancel_order_benchmark() {
 
 #[test]
 fn find_market_cost1() {
-    let ob = OrderBook::new();
+    let ob: OrderBook<u128> = OrderBook::new();
 
     assert_eq!(
         ob.calculate_market_cost(Side::Buy, Decimal::from(0))
@@ -252,12 +252,14 @@ fn find_market_cost2() {
     println!("{ob}");
 
     assert_eq!(
-        ob.calculate_market_cost(Side::Sell, Decimal::from(17)).unwrap(),
+        ob.calculate_market_cost(Side::Sell, Decimal::from(17))
+            .unwrap(),
         (Decimal::from(17), Decimal::from(-290))
     );
 
     assert_eq!(
-        ob.calculate_market_cost(Side::Buy, Decimal::from(55)).unwrap(),
+        ob.calculate_market_cost(Side::Buy, Decimal::from(55))
+            .unwrap(),
         (Decimal::from(36), Decimal::from(450 + 350 + 245 + 200))
     );
 }
@@ -376,7 +378,8 @@ fn general1() {
     );
 
     assert_eq!(
-        ob.calculate_market_cost(Side::Sell, Decimal::from(25)).unwrap(),
+        ob.calculate_market_cost(Side::Sell, Decimal::from(25))
+            .unwrap(),
         (Decimal::from(19), Decimal::from(-(140 + 180)))
     );
 
@@ -435,7 +438,8 @@ fn general1() {
     );
 
     assert_eq!(
-        ob.calculate_market_cost(Side::Buy, Decimal::from(18)).unwrap(),
+        ob.calculate_market_cost(Side::Buy, Decimal::from(18))
+            .unwrap(),
         (Decimal::from(18), Decimal::from(35 * 17 + 50))
     );
 
@@ -456,8 +460,9 @@ fn general1() {
     assert_eq!(ob.cancel_order(4), Err(errors::CancelOrder::OrderNotFound));
 
     assert_eq!(
-        ob.calculate_market_cost(Side::Sell, Decimal::from(18)).unwrap(),
-        (Decimal::from(18), Decimal::from(-(15*8-5*4-10*6)))
+        ob.calculate_market_cost(Side::Sell, Decimal::from(18))
+            .unwrap(),
+        (Decimal::from(18), Decimal::from(-(15 * 8 - 5 * 4 - 10 * 6)))
     );
 
     assert_eq!(

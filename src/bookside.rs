@@ -5,16 +5,16 @@ use rust_decimal::Decimal;
 use crate::order::Order;
 
 #[derive(Debug)]
-pub struct BookSide<T>
+pub struct BookSide<Ordering, OrderID>
 where
-    BookSideKey<T>: Ord,
+    BookSideKey<Ordering>: Ord,
 {
-    tree: BTreeMap<BookSideKey<T>, Rc<RefCell<Order>>>,
+    tree: BTreeMap<BookSideKey<Ordering>, Rc<RefCell<Order<OrderID>>>>,
 }
 
-impl<T> BookSide<T>
+impl<Priority, OrderID> BookSide<Priority, OrderID>
 where
-    BookSideKey<T>: Ord,
+    BookSideKey<Priority>: Ord,
 {
     pub fn new() -> Self {
         BookSide {
@@ -23,7 +23,7 @@ where
     }
 
     /// no duplicate order check present
-    pub fn add(&mut self, shared_order: Rc<RefCell<Order>>) {
+    pub fn add(&mut self, shared_order: Rc<RefCell<Order<OrderID>>>) {
         // get map key
         let key;
         {
@@ -35,14 +35,14 @@ where
     }
 
     /// does not panic if order can't be found
-    pub fn remove(&mut self, shared_order: Rc<RefCell<Order>>) {
+    pub fn remove(&mut self, shared_order: Rc<RefCell<Order<OrderID>>>) {
         let order = shared_order.borrow();
         let key = BookSideKey::new(order.price, order.priority);
 
         self.tree.remove(&key);
     }
 
-    pub fn get_highest_priority(&self) -> Option<&Rc<RefCell<Order>>> {
+    pub fn get_highest_priority(&self) -> Option<&Rc<RefCell<Order<OrderID>>>> {
         self.tree
             .first_key_value()
             .map(|(_, shared_order)| shared_order)
@@ -53,20 +53,22 @@ where
         self.tree.pop_first();
     }
 
-    pub fn iter<'a>(&'a self) -> Box<dyn DoubleEndedIterator<Item = &Rc<RefCell<Order>>> + 'a> {
+    pub fn iter<'a>(
+        &'a self,
+    ) -> Box<dyn DoubleEndedIterator<Item = &Rc<RefCell<Order<OrderID>>>> + 'a> {
         Box::new(self.tree.iter().map(|(_, a)| a))
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct BookSideKey<T> {
+pub struct BookSideKey<Ordering> {
     price: Decimal,
     priority: u64,
 
-    _marker: PhantomData<T>,
+    _marker: PhantomData<Ordering>,
 }
 
-impl<T> BookSideKey<T> {
+impl<Priority> BookSideKey<Priority> {
     fn new(price: Decimal, priority: u64) -> Self {
         BookSideKey {
             price,
@@ -75,12 +77,12 @@ impl<T> BookSideKey<T> {
         }
     }
 }
-impl<T> PartialEq for BookSideKey<T> {
+impl<Priority> PartialEq for BookSideKey<Priority> {
     fn eq(&self, other: &Self) -> bool {
         self.price == other.price && self.priority == other.priority
     }
 }
-impl<T> PartialOrd for BookSideKey<T>
+impl<Priority> PartialOrd for BookSideKey<Priority>
 where
     Self: Ord,
 {
@@ -88,7 +90,7 @@ where
         Some(self.cmp(other))
     }
 }
-impl<T> Eq for BookSideKey<T> {}
+impl<Priority> Eq for BookSideKey<Priority> {}
 
 #[derive(Debug)]
 pub struct MinPricePriority;

@@ -2,10 +2,8 @@ use std::fmt::Display;
 
 use rust_decimal::Decimal;
 
-pub type ID = u128;
-
 #[derive(Debug)]
-pub struct Order {
+pub struct Order<ID> {
     pub id: ID,
     pub side: Side,
     pub price: Decimal,
@@ -23,7 +21,7 @@ impl Display for Side {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
             Self::Buy => write!(f, "Buy"),
-            Self::Sell => write!(f, "Sell")
+            Self::Sell => write!(f, "Sell"),
         }
     }
 }

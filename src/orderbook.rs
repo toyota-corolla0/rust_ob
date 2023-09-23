@@ -1,26 +1,32 @@
-use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, fmt::Display, hash::Hash, rc::Rc};
 
 use rust_decimal::Decimal;
 
 use crate::{
     bookside::{BookSide, MaxPricePriority, MinPricePriority},
     errors,
-    order::{Order, Side, ID},
+    order::{Order, Side},
 };
 
 #[derive(Debug)]
-pub struct OrderBook {
+pub struct OrderBook<OrderID>
+where
+    OrderID: Copy + PartialEq + Eq + Hash,
+{
     // every active order is in: order_index AND (buy_side XOR sell_side)
-    order_index: HashMap<ID, Rc<RefCell<Order>>>,
+    order_index: HashMap<OrderID, Rc<RefCell<Order<OrderID>>>>,
 
-    buy_side: BookSide<MaxPricePriority>,
-    sell_side: BookSide<MinPricePriority>,
+    buy_side: BookSide<MaxPricePriority, OrderID>,
+    sell_side: BookSide<MinPricePriority, OrderID>,
 
     // increments on each new order added to data structures
     priority: u64,
 }
 
-impl OrderBook {
+impl<OrderID> OrderBook<OrderID>
+where
+    OrderID: Copy + PartialEq + Eq + Hash,
+{
     /// Create new initialized OrderBook
     pub fn new() -> Self {
         OrderBook {
@@ -87,11 +93,11 @@ impl OrderBook {
     /// ```
     pub fn process_limit_order(
         &mut self,
-        id: ID,
+        id: OrderID,
         side: Side,
         price: Decimal,
         mut quantity: Decimal,
-    ) -> Result<Vec<OrderMatch>, errors::ProcessLimitOrder> {
+    ) -> Result<Vec<OrderMatch<OrderID>>, errors::ProcessLimitOrder> {
         // check to ensure order does not already exist
         if self.order_index.contains_key(&id) {
             return Err(errors::ProcessLimitOrder::OrderAlreadyExists);
@@ -237,7 +243,7 @@ impl OrderBook {
     /// // possible errors
     /// assert_eq!(ob.cancel_order(884213), Err(errors::CancelOrder::OrderNotFound));
     /// ```
-    pub fn cancel_order(&mut self, id: ID) -> Result<(), errors::CancelOrder> {
+    pub fn cancel_order(&mut self, id: OrderID) -> Result<(), errors::CancelOrder> {
         match self.order_index.remove(&id) {
             Some(shared_order) => {
                 let side;
@@ -374,10 +380,10 @@ impl OrderBook {
     /// ```
     pub fn process_market_order(
         &mut self,
-        id: ID,
+        id: OrderID,
         side: Side,
         quantity: Decimal,
-    ) -> Result<Vec<OrderMatch>, errors::ProcessMarketOrder> {
+    ) -> Result<Vec<OrderMatch<OrderID>>, errors::ProcessMarketOrder> {
         // get min or max price based on side
         let price = match side {
             Side::Buy => Decimal::MAX,
@@ -387,8 +393,12 @@ impl OrderBook {
         let result = self
             .process_limit_order(id, side, price, quantity)
             .map_err(|e| match e {
-                errors::ProcessLimitOrder::NonPositiveQuantity => errors::ProcessMarketOrder::NonPositiveQuantity,
-                errors::ProcessLimitOrder::OrderAlreadyExists => errors::ProcessMarketOrder::OrderAlreadyExists,
+                errors::ProcessLimitOrder::NonPositiveQuantity => {
+                    errors::ProcessMarketOrder::NonPositiveQuantity
+                }
+                errors::ProcessLimitOrder::OrderAlreadyExists => {
+                    errors::ProcessMarketOrder::OrderAlreadyExists
+                }
             });
 
         if let Ok(ref order_match_vec) = result {
@@ -406,7 +416,10 @@ impl OrderBook {
     }
 }
 
-impl Display for OrderBook {
+impl<OrderID: Display> Display for OrderBook<OrderID>
+where
+    OrderID: Copy + PartialEq + Eq + Hash,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         const PADDING: usize = 18;
         writeln!(
@@ -432,9 +445,9 @@ impl Display for OrderBook {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct OrderMatch {
+pub struct OrderMatch<OrderID> {
     /// ID of order
-    pub order: ID,
+    pub order: OrderID,
     /// Quantity of order just fulfilled
     /// - Always positive
     pub quantity: Decimal,
@@ -446,8 +459,8 @@ pub struct OrderMatch {
     pub cost: Decimal,
 }
 
-impl OrderMatch {
-    fn new(order: ID) -> Self {
+impl<OrderID> OrderMatch<OrderID> {
+    fn new(order: OrderID) -> Self {
         OrderMatch {
             order,
             quantity: Decimal::ZERO,
