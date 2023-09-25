@@ -61,11 +61,11 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct BookSideKey<Ordering> {
+pub struct BookSideKey<Priority> {
     price: Decimal,
     priority: u64,
 
-    _marker: PhantomData<Ordering>,
+    _marker: PhantomData<Priority>,
 }
 
 impl<Priority> BookSideKey<Priority> {
