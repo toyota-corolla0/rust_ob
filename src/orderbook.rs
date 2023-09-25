@@ -444,6 +444,8 @@ where
     }
 }
 
+unsafe impl<OrderID: Copy + PartialEq + Eq + Hash + Send> Send for OrderBook<OrderID>  {}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct OrderMatch<OrderID> {
     /// ID of order
