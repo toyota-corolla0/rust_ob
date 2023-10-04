@@ -414,10 +414,40 @@ where
     pub fn get_highest_priority_order(&self, side: Side) -> Option<OrderID> {
         let shared_order = match side {
             Side::Buy => self.buy_side.get_highest_priority(),
-            Side::Sell => self.sell_side.get_highest_priority()
+            Side::Sell => self.sell_side.get_highest_priority(),
         };
 
         shared_order.map(|o| o.borrow().id)
+    }
+
+    /// Returns (price, quantity_at_price) of the highest priority price by side
+    pub fn get_highest_priority_price_quantity(&self, side: Side) -> Option<(Decimal, Decimal)> {
+        // return vars
+        let mut price = Decimal::ZERO;
+        let mut quantity_at_price = Decimal::ZERO;
+
+        let side_iter = match side {
+            Side::Buy => self.buy_side.iter(),
+            Side::Sell => self.sell_side.iter(),
+        };
+
+        for (i, order) in side_iter.map(|o| o.borrow()).enumerate() {
+            if i == 0 {
+                price = order.price;
+            } else if price != order.price {
+                break;
+            }
+
+            quantity_at_price = quantity_at_price
+                .checked_add(order.quantity)
+                .expect("OrderBook: addition overflow")
+        }
+
+        if quantity_at_price.is_zero() {
+            return None;
+        }
+
+        Some((price, quantity_at_price))
     }
 
     fn get_priority(&mut self) -> u64 {
@@ -454,7 +484,7 @@ where
     }
 }
 
-unsafe impl<OrderID: Copy + PartialEq + Eq + Hash + Send> Send for OrderBook<OrderID>  {}
+unsafe impl<OrderID: Copy + PartialEq + Eq + Hash + Send> Send for OrderBook<OrderID> {}
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct OrderMatch<OrderID> {
