@@ -410,6 +410,16 @@ where
         result
     }
 
+    /// Returns the `OrderID` of the next to be fulfilled order by side
+    pub fn get_highest_priority_order(&self, side: Side) -> Option<OrderID> {
+        let shared_order = match side {
+            Side::Buy => self.buy_side.get_highest_priority(),
+            Side::Sell => self.sell_side.get_highest_priority()
+        };
+
+        shared_order.map(|o| o.borrow().id)
+    }
+
     fn get_priority(&mut self) -> u64 {
         self.priority += 1;
         self.priority
