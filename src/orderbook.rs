@@ -153,30 +153,30 @@ where
             new_order_match.quantity = new_order_match
                 .quantity
                 .checked_add(satisfied_quantity)
-                .unwrap_or_else(|| panic!("OrderBook: addition overflow"));
+                .expect("OrderBook: addition overflow");
             highest_priority_order_match.quantity = highest_priority_order_match
                 .quantity
                 .checked_add(satisfied_quantity)
-                .unwrap_or_else(|| panic!("OrderBook: addition overflow"));
+                .expect("OrderBook: addition overflow");
 
             // find cost and update vars
             let buy_side_cost = highest_priority_order
                 .price
                 .checked_mul(satisfied_quantity)
-                .unwrap_or_else(|| panic!("OrderBook: multiplication overflow"));
+                .expect("OrderBook: multiplication overflow");
             match side {
                 Side::Buy => {
                     new_order_match.cost = new_order_match
                         .cost
                         .checked_add(buy_side_cost)
-                        .unwrap_or_else(|| panic!("OrderBook: addition overflow"));
+                        .expect("OrderBook: addition overflow");
                     highest_priority_order_match.cost = -buy_side_cost
                 }
                 Side::Sell => {
                     new_order_match.cost = new_order_match
                         .cost
                         .checked_sub(buy_side_cost)
-                        .unwrap_or_else(|| panic!("OrderBook: subtraction overflow"));
+                        .expect("OrderBook: subtraction overflow");
                     highest_priority_order_match.cost = buy_side_cost
                 }
             }
@@ -313,25 +313,25 @@ where
             let satisfied_quantity = quantity.min(order.quantity);
             quantity = quantity
                 .checked_sub(satisfied_quantity)
-                .unwrap_or_else(|| panic!("OrderBook: subtraction overflow"));
+                .expect("OrderBook: subtraction overflow");
             quantity_fulfilled = quantity_fulfilled
                 .checked_add(satisfied_quantity)
-                .unwrap_or_else(|| panic!("OrderBook: addition overflow"));
+                .expect("OrderBook: addition overflow");
 
             let buy_side_cost = order
                 .price
                 .checked_mul(satisfied_quantity)
-                .unwrap_or_else(|| panic!("OrderBook: multiplication overflow"));
+                .expect("OrderBook: multiplication overflow");
             match side {
                 Side::Buy => {
                     cost = cost
                         .checked_add(buy_side_cost)
-                        .unwrap_or_else(|| panic!("OrderBook: addition overflow"));
+                        .expect("OrderBook: addition overflow");
                 }
                 Side::Sell => {
                     cost = cost
                         .checked_sub(buy_side_cost)
-                        .unwrap_or_else(|| panic!("OrderBook: subtraction overflow"));
+                        .expect("OrderBook: subtraction overflow");
                 }
             }
         }
