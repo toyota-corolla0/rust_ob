@@ -410,7 +410,7 @@ where
         result
     }
 
-    /// Returns the `OrderID` of the next to be fulfilled order by side
+    /// Returns the `OrderID` of the next to be fulfilled order by side if any order exists on side
     pub fn get_highest_priority_order(&self, side: Side) -> Option<OrderID> {
         let shared_order = match side {
             Side::Buy => self.buy_side.get_highest_priority(),
@@ -420,7 +420,17 @@ where
         shared_order.map(|o| o.borrow().id)
     }
 
-    /// Returns (price, quantity_at_price) of the highest priority price by side
+    /// Returns the price of the next to be fulfilled order by side if any order exists on side
+    pub fn get_highest_priority_price(&self, side: Side) -> Option<Decimal> {
+        let shared_order = match side {
+            Side::Buy => self.buy_side.get_highest_priority(),
+            Side::Sell => self.sell_side.get_highest_priority(),
+        };
+
+        shared_order.map(|o| o.borrow().price)
+    }
+
+    /// Returns (price, quantity_at_price) of the highest priority price by side if any order exists on side
     pub fn get_highest_priority_price_quantity(&self, side: Side) -> Option<(Decimal, Decimal)> {
         // return vars
         let mut price = Decimal::ZERO;

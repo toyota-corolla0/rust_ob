@@ -576,6 +576,42 @@ fn get_highest_priority_order1() {
 }
 
 #[test]
+fn get_highest_priority_price1() {
+    let mut ob = OrderBook::new();
+
+    assert_eq!(ob.get_highest_priority_price(Side::Buy), None);
+
+    assert_eq!(
+        ob.process_limit_order(1, Side::Buy, Decimal::from(20), Decimal::from(5))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(2, Side::Buy, Decimal::from(15), Decimal::from(3))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(3, Side::Sell, Decimal::from(75), Decimal::from(10))
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        ob.process_limit_order(4, Side::Sell, Decimal::from(50), Decimal::from(4))
+            .unwrap()
+            .len(),
+        0
+    );
+
+
+    assert_eq!(ob.get_highest_priority_price(Side::Buy), Some(Decimal::from(20)));
+    assert_eq!(ob.get_highest_priority_price(Side::Sell), Some(Decimal::from(50)));
+}
+
+#[test]
 fn get_highest_priority_price_quantity1() {
     let mut ob = OrderBook::new();
 
