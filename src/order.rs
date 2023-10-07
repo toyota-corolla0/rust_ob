@@ -17,6 +17,15 @@ pub enum Side {
     Sell,
 }
 
+impl Side {
+    pub fn opposite(&self) -> Self {
+        match self {
+            Self::Buy => Self::Sell,
+            Self::Sell => Self::Buy
+        }
+    }
+}
+
 impl Display for Side {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {

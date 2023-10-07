@@ -298,13 +298,13 @@ where
         // inits
         let mut quantity_fulfilled = Decimal::ZERO;
         let mut cost = Decimal::ZERO;
-        let mut oppisite_side_iter = match side {
+        let mut opposite_side_iter = match side {
             Side::Buy => self.sell_side.iter(),
             Side::Sell => self.buy_side.iter(),
         };
 
         while !quantity.is_zero() {
-            let shared_order = oppisite_side_iter.next();
+            let shared_order = opposite_side_iter.next();
             let order = match shared_order {
                 Some(val) => val.borrow(),
                 None => break,
