@@ -1,9 +1,5 @@
-use std::time::Instant;
-
 use rust_decimal::Decimal;
 use rust_ob::{errors, OrderBook, OrderMatch, Side};
-
-use rand::prelude::*;
 
 #[test]
 fn process_limit_order1() {
@@ -120,29 +116,6 @@ fn process_limit_order3() {
 }
 
 #[test]
-fn process_limit_order_benchmark() {
-    static ITERATIONS: u128 = 10000;
-
-    let mut ob = OrderBook::new();
-
-    let start = Instant::now();
-
-    for i in 0..ITERATIONS {
-        let side = if i % 2 == 0 { Side::Buy } else { Side::Sell };
-
-        let price = Decimal::from(random::<u8>());
-        let quantity = Decimal::from(random::<u8>());
-
-        let _ = ob.process_limit_order(i, side, price, quantity);
-    }
-
-    let time_in_millis = start.elapsed().as_millis();
-
-    println!("{ob}");
-    println!("Iterations: {ITERATIONS}    Time: {time_in_millis}ms");
-}
-
-#[test]
 fn cancel_order1() {
     let mut ob = OrderBook::new();
     let _ = ob.process_limit_order(884213, Side::Sell, Decimal::from(5), Decimal::from(5));
@@ -152,32 +125,6 @@ fn cancel_order1() {
         ob.cancel_order(9943),
         Err(errors::CancelOrder::OrderNotFound)
     );
-}
-
-#[test]
-fn cancel_order_benchmark() {
-    const ITERATIONS: u128 = 10000;
-
-    let mut ob = OrderBook::new();
-    for i in 0..ITERATIONS {
-        let _ = ob.process_limit_order(
-            i,
-            Side::Sell,
-            Decimal::from(random::<u16>()),
-            Decimal::from(1),
-        );
-    }
-
-    let start = Instant::now();
-
-    for i in 0..ITERATIONS {
-        let _ = ob.cancel_order(i);
-    }
-
-    let time_in_millis = start.elapsed().as_millis();
-
-    println!("{ob}");
-    println!("Iterations: {ITERATIONS}    Time: {time_in_millis}ms");
 }
 
 #[test]
@@ -606,9 +553,14 @@ fn get_highest_priority_price1() {
         0
     );
 
-
-    assert_eq!(ob.get_highest_priority_price(Side::Buy), Some(Decimal::from(20)));
-    assert_eq!(ob.get_highest_priority_price(Side::Sell), Some(Decimal::from(50)));
+    assert_eq!(
+        ob.get_highest_priority_price(Side::Buy),
+        Some(Decimal::from(20))
+    );
+    assert_eq!(
+        ob.get_highest_priority_price(Side::Sell),
+        Some(Decimal::from(50))
+    );
 }
 
 #[test]
@@ -640,8 +592,14 @@ fn get_highest_priority_price_quantity1() {
         0
     );
 
-    assert_eq!(ob.get_highest_priority_price_quantity(Side::Buy), Some((Decimal::from(20), Decimal::from(5))));
-    assert_eq!(ob.get_highest_priority_price_quantity(Side::Sell), Some((Decimal::from(50), Decimal::from(4))));
+    assert_eq!(
+        ob.get_highest_priority_price_quantity(Side::Buy),
+        Some((Decimal::from(20), Decimal::from(5)))
+    );
+    assert_eq!(
+        ob.get_highest_priority_price_quantity(Side::Sell),
+        Some((Decimal::from(50), Decimal::from(4)))
+    );
 
     assert_eq!(
         ob.process_limit_order(5, Side::Buy, Decimal::from(20), Decimal::from(24))
@@ -656,11 +614,14 @@ fn get_highest_priority_price_quantity1() {
         0
     );
 
-    assert_eq!(ob.get_highest_priority_price_quantity(Side::Buy), Some((Decimal::from(20), Decimal::from(36))));
+    assert_eq!(
+        ob.get_highest_priority_price_quantity(Side::Buy),
+        Some((Decimal::from(20), Decimal::from(36)))
+    );
 
     _ = ob.cancel_order(3);
     _ = ob.cancel_order(4);
-    
+
     assert_eq!(ob.get_highest_priority_price_quantity(Side::Sell), None);
 }
 
