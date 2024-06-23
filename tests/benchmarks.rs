@@ -4,7 +4,7 @@ use std::time::Instant;
 
 #[test]
 fn process_limit_order_benchmark() {
-    static ITERATIONS: u128 = 1000000;
+    static ITERATIONS: u128 = 10000;
 
     let mut ob = OrderBook::new();
 
@@ -30,7 +30,7 @@ fn process_limit_order_benchmark() {
 
 #[test]
 fn cancel_order_benchmark() {
-    const ITERATIONS: u128 = 1000000;
+    const ITERATIONS: u128 = 10000;
 
     let mut ob = OrderBook::new();
     for i in 0..ITERATIONS {

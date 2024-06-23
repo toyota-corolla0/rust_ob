@@ -16,7 +16,7 @@ pub struct OrderBook<OrderID> {
     buy_side: BookSide<MaxPricePriority, OrderID>,
     sell_side: BookSide<MinPricePriority, OrderID>,
 
-    // increments on each new order added to data structures
+    // increments on each new order added to data structures. Used for order time priority.
     priority: u64,
 }
 
@@ -105,22 +105,17 @@ where
         }
 
         // vars
-        let mut match_vec = Vec::new();
-        let mut new_order_match = OrderMatch::new(id);
+        let mut order_match_vec = Vec::new();
+        let mut new_order_order_match = OrderMatch::new(id);
 
         // main matching loop
         while quantity > Decimal::ZERO {
             // get highest priority order on opposite side
-            let shared_highest_priority_order = {
-                let option_shared_order = match side {
-                    Side::Buy => self.sell_side.get_highest_priority(),
-                    Side::Sell => self.buy_side.get_highest_priority(),
-                };
-
-                match option_shared_order {
-                    Some(val) => val,
-                    None => break,
-                }
+            let Some(shared_highest_priority_order) = (match side {
+                Side::Buy => self.sell_side.get_highest_priority(),
+                Side::Sell => self.buy_side.get_highest_priority(),
+            }) else {
+                break;
             };
             let mut highest_priority_order = shared_highest_priority_order.borrow_mut();
 
@@ -133,48 +128,28 @@ where
                 break;
             }
 
-            // create Match for highest_priority_order
-            let mut highest_priority_order_match = OrderMatch::new(highest_priority_order.id);
+            // create order match for highest_priority_order
+            let mut highest_priority_order_order_match = OrderMatch::new(highest_priority_order.id);
 
             // find satisfied quantity and update vars
             let satisfied_quantity = quantity.min(highest_priority_order.quantity);
 
-            quantity = quantity
-                .checked_sub(satisfied_quantity)
-                .unwrap_or_else(|| panic!("OrderBook: subtraction overflow"));
-            highest_priority_order.quantity = highest_priority_order
-                .quantity
-                .checked_sub(satisfied_quantity)
-                .unwrap_or_else(|| panic!("OrderBook: subtraction overflow"));
+            quantity -= satisfied_quantity;
+            highest_priority_order.quantity -= satisfied_quantity;
 
-            new_order_match.quantity = new_order_match
-                .quantity
-                .checked_add(satisfied_quantity)
-                .expect("OrderBook: addition overflow");
-            highest_priority_order_match.quantity = highest_priority_order_match
-                .quantity
-                .checked_add(satisfied_quantity)
-                .expect("OrderBook: addition overflow");
+            new_order_order_match.quantity += satisfied_quantity;
+            highest_priority_order_order_match.quantity += satisfied_quantity;
 
             // find cost and update vars
-            let buy_side_cost = highest_priority_order
-                .price
-                .checked_mul(satisfied_quantity)
-                .expect("OrderBook: multiplication overflow");
+            let buy_side_cost = highest_priority_order.price * satisfied_quantity;
             match side {
                 Side::Buy => {
-                    new_order_match.cost = new_order_match
-                        .cost
-                        .checked_add(buy_side_cost)
-                        .expect("OrderBook: addition overflow");
-                    highest_priority_order_match.cost = -buy_side_cost
+                    new_order_order_match.cost += buy_side_cost;
+                    highest_priority_order_order_match.cost = -buy_side_cost
                 }
                 Side::Sell => {
-                    new_order_match.cost = new_order_match
-                        .cost
-                        .checked_sub(buy_side_cost)
-                        .expect("OrderBook: subtraction overflow");
-                    highest_priority_order_match.cost = buy_side_cost
+                    new_order_order_match.cost -= buy_side_cost;
+                    highest_priority_order_order_match.cost = buy_side_cost
                 }
             }
 
@@ -182,25 +157,20 @@ where
             if highest_priority_order.quantity == Decimal::ZERO {
                 self.order_index.remove(&highest_priority_order.id);
 
-                match highest_priority_order.side {
-                    Side::Buy => {
-                        drop(highest_priority_order);
-                        self.buy_side.pop_highest_priority();
-                    }
-                    Side::Sell => {
-                        drop(highest_priority_order);
-                        self.sell_side.pop_highest_priority();
-                    }
+                drop(highest_priority_order);
+                match side {
+                    Side::Sell => self.buy_side.pop_highest_priority(),
+                    Side::Buy => self.sell_side.pop_highest_priority(),
                 }
             }
 
             // add to result vec
-            match_vec.push(highest_priority_order_match);
+            order_match_vec.push(highest_priority_order_order_match);
         }
 
         // add to result vec if not empty
-        if !new_order_match.quantity.is_zero() {
-            match_vec.push(new_order_match);
+        if !new_order_order_match.quantity.is_zero() {
+            order_match_vec.push(new_order_order_match);
         }
 
         // add order to data structures if any remaining quantity
@@ -210,7 +180,7 @@ where
                 side,
                 price,
                 quantity,
-                priority: self.get_priority(),
+                priority: self.get_next_priority(),
             }));
 
             self.order_index.insert(id, shared_order.clone());
@@ -220,7 +190,7 @@ where
             }
         }
 
-        Ok(match_vec)
+        Ok(order_match_vec)
     }
 
     /// Cancels order with id
@@ -241,24 +211,17 @@ where
     /// assert_eq!(ob.cancel_order(884213), Err(errors::CancelOrder::OrderNotFound));
     /// ```
     pub fn cancel_order(&mut self, id: OrderID) -> Result<(), errors::CancelOrder> {
-        match self.order_index.remove(&id) {
-            Some(shared_order) => {
-                let side;
-                {
-                    let order = shared_order.borrow();
-                    side = order.side;
-                }
+        let Some(shared_order) = self.order_index.remove(&id) else {
+            return Err(errors::CancelOrder::OrderNotFound);
+        };
 
-                match side {
-                    Side::Buy => self.buy_side.remove(shared_order),
-                    Side::Sell => self.sell_side.remove(shared_order),
-                }
-
-                Ok(())
-            }
-
-            None => Err(errors::CancelOrder::OrderNotFound),
+        let side = shared_order.borrow().side;
+        match side {
+            Side::Buy => self.buy_side.remove(shared_order),
+            Side::Sell => self.sell_side.remove(shared_order),
         }
+
+        Ok(())
     }
 
     /// Calculates cost to buy/sell up to quantity.
@@ -308,28 +271,13 @@ where
             };
 
             let satisfied_quantity = quantity.min(order.quantity);
-            quantity = quantity
-                .checked_sub(satisfied_quantity)
-                .expect("OrderBook: subtraction overflow");
-            quantity_fulfilled = quantity_fulfilled
-                .checked_add(satisfied_quantity)
-                .expect("OrderBook: addition overflow");
+            quantity -= satisfied_quantity;
+            quantity_fulfilled += satisfied_quantity;
 
-            let buy_side_cost = order
-                .price
-                .checked_mul(satisfied_quantity)
-                .expect("OrderBook: multiplication overflow");
+            let buy_side_cost = order.price * satisfied_quantity;
             match side {
-                Side::Buy => {
-                    cost = cost
-                        .checked_add(buy_side_cost)
-                        .expect("OrderBook: addition overflow");
-                }
-                Side::Sell => {
-                    cost = cost
-                        .checked_sub(buy_side_cost)
-                        .expect("OrderBook: subtraction overflow");
-                }
+                Side::Buy => cost += buy_side_cost,
+                Side::Sell => cost -= buy_side_cost,
             }
         }
 
@@ -445,9 +393,7 @@ where
                 break;
             }
 
-            quantity_at_price = quantity_at_price
-                .checked_add(order.quantity)
-                .expect("OrderBook: addition overflow")
+            quantity_at_price += order.quantity
         }
 
         if quantity_at_price.is_zero() {
@@ -457,7 +403,7 @@ where
         Some((price, quantity_at_price))
     }
 
-    fn get_priority(&mut self) -> u64 {
+    fn get_next_priority(&mut self) -> u64 {
         self.priority += 1;
         self.priority
     }
