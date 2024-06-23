@@ -100,18 +100,16 @@ pub struct MaxPricePriority;
 impl Ord for BookSideKey<MinPricePriority> {
     fn cmp(&self, other: &Self) -> Ordering {
         match self.price.cmp(&other.price) {
-            core::cmp::Ordering::Equal => {}
-            ord => return ord,
+            Ordering::Equal => self.priority.cmp(&other.priority),
+            ord => ord,
         }
-        self.priority.cmp(&other.priority)
     }
 }
 impl Ord for BookSideKey<MaxPricePriority> {
     fn cmp(&self, other: &Self) -> Ordering {
         match other.price.cmp(&self.price) {
-            core::cmp::Ordering::Equal => {}
-            ord => return ord,
+            Ordering::Equal => self.priority.cmp(&other.priority),
+            ord => ord,
         }
-        self.priority.cmp(&other.priority)
     }
 }
