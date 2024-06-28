@@ -9,7 +9,10 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct OrderBook<OrderID> {
+pub struct OrderBook<OrderID>
+where
+    OrderID: Copy + PartialEq + Eq + Hash,
+{
     // every active order is in: order_index AND (buy_side XOR sell_side)
     order_index: HashMap<OrderID, Rc<RefCell<Order<OrderID>>>>,
 
